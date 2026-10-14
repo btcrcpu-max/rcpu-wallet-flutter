@@ -13,7 +13,8 @@
 #   KEY_ALIAS             - keyAlias（默认 rcpu）
 #   未配置 secrets 时流水线仍可运行（构建 debug APK），签名步骤显式报告缺失。
 #
-# 版本口径：pubspec.yaml sdk >=3.3.0 <4.0.0，web3dart ^2.7.3 已按 Flutter 3.22.4 验证。
+# 版本口径：pubspec.yaml sdk >=3.3.0 <4.0.0，web3dart ^2.7.3；
+# 注：3.22.4 未收录于官方 releases.json（stable 存在 3.22.0-3.22.3），改采 3.24.5。
 
 name: CI
 
@@ -29,7 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FLUTTER_VERSION: '3.22.4'
+  FLUTTER_VERSION: '3.24.5'
 
 jobs:
   # ------------------------------------------------------------------ #
