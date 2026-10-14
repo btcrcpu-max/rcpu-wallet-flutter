@@ -29,6 +29,7 @@ class NativeRpcClient {
 
   NativeRpcClient({this.baseUrl = 'http://127.0.0.1:7337'}) {
     _dio = Dio(BaseOptions(
+      baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 20),
     ));
