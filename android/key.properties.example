@@ -1,0 +1,4 @@
+storePassword=
+keyPassword=
+keyAlias=rcpu
+storeFile=rcpu-release.jks

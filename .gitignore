@@ -1,0 +1,17 @@
+# Flutter/Dart 构建产物
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+*.iml
+.idea/
+*.iws
+# 密钥与本地配置
+android/key.properties
+*.jks
+*.keystore
+.env
+# 系统与编辑器
+.DS_Store
+Thumbs.db

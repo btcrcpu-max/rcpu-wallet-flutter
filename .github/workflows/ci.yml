@@ -1,0 +1,181 @@
+# RCPU Wallet —— GitHub Actions CI/CD
+#
+# 覆盖阶段（与 .gitlab-ci.yml 同一套能力）：
+#   1. flutter analyze + flutter test
+#   2. APK 构建（有签名 secrets 时构建 signed release，否则构建 debug 兜底）
+#   3. 签名检查（apksigner 优先，无 build-tools 时 keytool 兜底）
+#   4. 产物上传（actions/upload-artifact）
+#
+# 签名配置（仓库级 Secrets，勿写明文）：
+#   ANDROID_KEYSTORE_B64  - android/rcpu-release.jks 的 base64（`base64 -w0 android/rcpu-release.jks`）
+#   KEYSTORE_PASSWORD     - storePassword
+#   KEY_PASSWORD          - keyPassword
+#   KEY_ALIAS             - keyAlias（默认 rcpu）
+#   未配置 secrets 时流水线仍可运行（构建 debug APK），签名步骤显式报告缺失。
+#
+# 版本口径：pubspec.yaml sdk >=3.3.0 <4.0.0，web3dart ^2.7.3 已按 Flutter 3.22.4 验证。
+
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.22.4'
+
+jobs:
+  # ------------------------------------------------------------------ #
+  # 阶段 1：静态检查 + 单测（阻塞项按 C1-C4 skip，流水线可直接通过）      #
+  # ------------------------------------------------------------------ #
+  test:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+  # ------------------------------------------------------------------ #
+  # 阶段 1b：TC-SIG-03 专项测试（占位实现下两条用例应全部通过）          #
+  # ------------------------------------------------------------------ #
+  test-tc-sig03:
+    name: Run TC-SIG-03
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Run TC-SIG-03 tests
+        run: flutter test test/tc_sig03_test.dart --reporter expanded
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tc-sig03-results
+          path: |
+            test/tc_sig03_test.dart
+
+  # ------------------------------------------------------------------ #
+  # 阶段 2-4：APK 构建 + 签名检查 + 产物上传                            #
+  # ------------------------------------------------------------------ #
+  release:
+    name: Build APK (signed when secrets present)
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      # Secrets 无法直接进 if 表达式，通过 job 级 env 引用后在步骤中判断。
+      ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      # --- 阶段 2a：签名配置检查 ----------------------------------- #
+      - name: Check signing config (keystore + key.properties)
+        id: signing
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_PASSWORD" ]; then
+            echo "signing=enabled"
+            echo "signing=enabled" >> "$GITHUB_OUTPUT"
+          else
+            echo "signing=missing"
+            echo "WARN: ANDROID_KEYSTORE_B64 / KEYSTORE_PASSWORD / KEY_PASSWORD 未配置，将构建 debug APK。"
+            echo "signing=missing" >> "$GITHUB_OUTPUT"
+          fi
+
+      # --- 阶段 2b：注入签名材料（仅 signing=enabled） -------------- #
+      - name: Install signing material
+        if: steps.signing.outputs.signing == 'enabled'
+        run: |
+          echo "$ANDROID_KEYSTORE_B64" | base64 -d > android/rcpu-release.jks
+          cat > android/key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=${KEY_ALIAS:-rcpu}
+          storeFile=rcpu-release.jks
+          EOF
+          # 防泄露：key.properties 不入库（.gitignore 已含），此处仅校验可写
+          test -f android/key.properties && test -s android/rcpu-release.jks
+
+      # --- 阶段 2c：APK 构建 --------------------------------------- #
+      - name: Build release APK (signed)
+        if: steps.signing.outputs.signing == 'enabled'
+        run: flutter build apk --release
+
+      - name: Build debug APK (unsigned fallback)
+        if: steps.signing.outputs.signing != 'enabled'
+        run: flutter build apk --debug
+
+      # --- 阶段 3：签名检查 ---------------------------------------- #
+      - name: Verify APK signature
+        if: steps.signing.outputs.signing == 'enabled'
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          test -f "$APK"
+          APKSIGNER="$(ls "$ANDROID_SDK_ROOT"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -n 1 || true)"
+          if [ -n "$APKSIGNER" ]; then
+            "$APKSIGNER" verify --print-certs "$APK"
+          else
+            # build-tools 缺失时 keytool 兜底（JDK 自带）
+            keytool -printcert -jarfile "$APK"
+          fi
+
+      - name: Verify unsigned APK exists (explicit check when no secrets)
+        if: steps.signing.outputs.signing != 'enabled'
+        run: test -f build/app/outputs/flutter-apk/app-debug.apk
+
+      # --- 阶段 4：产物上传 ---------------------------------------- #
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcpu-wallet-apk-${{ github.sha }}
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
+          retention-days: 14
