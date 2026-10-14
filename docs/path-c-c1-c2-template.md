@@ -1,10 +1,12 @@
-# Path C 待确认规范模板（C1/C2）
+# Path C 待确认规范模板（C1/C2）【已归档】
 
-> 状态：**待官方文档回填**｜更新：2026-10-14
-> 用途：官方 CT / Path C 协议文档到位前的**对照填写模板**——拿到官方文档后将
-> 「待确认内容」逐行回填，回填后即可替换 `derivation.dart` 中的占位路径与编码逻辑。
-> 关联：`docs/path-c-fix-list.md`（修改清单）、`docs/path-c-check-list.md`（验收清单）、
-> `docs/ct-test-cases.md`（TC-DRV-xx 用例）。
+> 状态：**✅ 已完成回填**｜归档日期：2026-10-14
+> 说明：官方仓库 `github.com/btcrcpu-max/rcpu` 已提供 `doc/ct-path-c.md`（C1 完整规范）与
+> `src/key_io.cpp`（C2 地址编码），回填结果见 **`docs/path-c-spec.md`（权威文档，取代本模板）**。
+> 本文件保留存档仅作历史对照，不再作为待办模板；剩余唯一待确认项为「Native BIP32 派生路径」，
+> 见 `docs/path-c-spec.md` §4.1。
+> 关联：`docs/path-c-spec.md`（权威）、`docs/path-c-fix-list.md`（修改清单）、
+> `docs/path-c-check-list.md`（验收清单）、`docs/ct-test-cases.md`（TC-DRV-xx 用例）。
 
 ---
 

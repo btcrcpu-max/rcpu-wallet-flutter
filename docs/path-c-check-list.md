@@ -2,8 +2,8 @@
 
 > 用于官方 Path C 协议文档（C1/C2）到位后的**逐项联调验收**。
 > 用法：每次验收在 `[ ]` 内填 `x`，并在备注列记录证据（交易哈希 / 截图 / 测试用例号）。
-> 关联文档：`docs/path-c-fix-list.md`（修改步骤）、`docs/ct-test-cases.md`（用例号 TC-xx）、
-> `docs/path-c-c1-c2-template.md`（C1/C2 待确认模板）。
+> 关联文档：`docs/path-c-fix-list.md`（修改步骤）、`docs/path-c-spec.md`（**Path C 官方规范·权威**）、
+> `docs/ct-test-cases.md`（用例号 TC-xx）、`docs/path-c-c1-c2-template.md`（回填存档）。
 
 ## A. 地址派生
 

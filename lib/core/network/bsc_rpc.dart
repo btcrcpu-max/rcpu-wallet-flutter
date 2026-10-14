@@ -44,7 +44,8 @@ class BscRpcClient {
 
   /// 查询 BNB 余额（Gas 检查）。
   Future<BigInt> getBnbBalance(String address) async {
-    return _client.getBalance(EthereumAddress.fromHex(address));
+    final bal = await _client.getBalance(EthereumAddress.fromHex(address));
+    return bal.getInWei;
   }
 
   /// 估算 Gas（web3dart 专用实现预留）。
@@ -95,7 +96,7 @@ class BscRpcClient {
 
   /// 查询交易状态。
   Future<TxRecord> getTxStatus(String txHash) async {
-    final receipt = await _client.getTransactionReceipt(Hash.fromHex(txHash));
+    final receipt = await _client.getTransactionReceipt(txHash);
     return TxRecord(
       txHash: txHash,
       asset: 'wrcpu',
@@ -106,9 +107,9 @@ class BscRpcClient {
     );
   }
 
-  DelegatingContract _wrcpuContract() {
-    return DelegatingContract(
-      ContractInterface.fromJson(wrcpuAbi),
+  DeployedContract _wrcpuContract() {
+    return DeployedContract(
+      ContractAbi.fromJson(wrcpuAbi, 'wrcpu'),
       EthereumAddress.fromHex(wrcpuContractAddress),
     );
   }

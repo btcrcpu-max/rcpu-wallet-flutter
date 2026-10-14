@@ -16,7 +16,7 @@ class BiometricAuth {
 
   /// 已录入生物特征。
   Future<bool> hasEnrolledBiometrics() async {
-    return _auth.isDeviceSupported() && await _auth.canCheckBiometrics;
+    return await _auth.isDeviceSupported() && await _auth.canCheckBiometrics;
   }
 
   /// 弹出系统生物识别确认。

@@ -16,6 +16,21 @@
 | 桥 | `https://rcpupool.asia/`（明文 rcpu1 专属地址累计，满 10 铸造） |
 | 金额单位 | micro（1 RCPU = 1e8 micro） |
 
+### 实测执行记录（2026-10-14，本机 Flutter SDK 3.13.5 / Dart 3.13.5）
+
+- 命令：`flutter test -j 1 --reporter expanded`（工程根 `rcpu_wallet/`）
+- 结果：**41 通过 / 12 跳过 / 0 失败（EXIT=0）**；6 个用例文件全部纳入
+  - `tc_sig02_hkdf_test.dart`：4/4 通过（官方 Appendix A/C 向量：view_seed、Path C nonce、rewind nonce、不同 spk 不同 nonce）
+  - `tc_sig03_test.dart`：2/2 通过（指纹成功触发签名入口；取消则中止且不产生签名对象）
+  - `tc_qr_payment_test.dart`：13/13 通过（收款码生成、扫码解析、金额校验）
+  - `tc_crypto_test.dart`：30 项派生/签名/地址结构全部通过
+  - `tc_bridge_test.dart`：11 项桥逻辑全部通过
+  - `tc_blocked_test.dart`：12 项按预期 skip（C1/C2/C3/C4 依赖项）
+- 实测修复的编译缺陷（此前全量运行暴露）：
+  1. `lib/core/biometric/biometric_auth.dart:19`：`isDeviceSupported()` 返回 `Future<bool>`，缺 `await` 导致类型不匹配 → 已加 `await`；
+  2. `lib/core/network/bsc_rpc.dart`：`DelegatingContract`/`ContractInterface` 为 API 误用（web3dart 2.7.3 实际为 `DeployedContract` + `ContractAbi.fromJson`）；`getBalance` 返回 `EtherAmount` 需 `.getInWei`；`getTransactionReceipt` 直接收 `String` 哈希 → 全部按真实 API 修正；
+  3. `lib/core/network/http_client.dart:5`：`BaseOptions` 非 const 构造，`static const` 编译失败 → 改 `static final`。
+
 ---
 
 ## 1. 派生一致性（对应矩阵第①行）
@@ -54,17 +69,17 @@
 ### TC-SIG-01 BSC 签名校验
 - **输入**：已知私钥、消息、签名（官方测试向量）
 - **期望**：`verifyBscSignature` 恢复地址 == 私钥对应地址
-- **当前状态**：🔴 阻塞（`signature.dart` 占位 `verifyBscSignature` 待接入 `web3dart` recoverAddress；与 C1 无强依赖，可先做）
+- **当前状态**：✅ 已实测 4/4 通过（2026-10-14：恢复地址 == 派生地址、篡改消息失败、错误地址失败、非 65 字节签名返回 false）；`verifyBscSignature` 已按 web3dart 真实 API 落地（`signature.dart`）
 
 ### TC-SIG-02 原生 CT 交易签名
 - **输入**：交易 hex + 私钥 + 盲化因子种子 + 接收方 CT 公钥（按协议签名方法入参）
 - **期望**：签名通过官方测试向量校验；CT 场景输出承诺 + 范围证明
-- **当前状态**：🔴 阻塞 C1（`signNative` 现为占位 `UnimplementedError`）
+- **当前状态**：🟡 部分解锁——HKDF/ECDH 层已由 `test/tc_sig02_hkdf_test.dart` 以官方 Appendix A/C 向量验证（view_seed / rewind nonce 逐字节一致），**已于 2026-10-14 本机实测 4/4 通过**；`signNative` 签名本体仍为占位 `UnimplementedError`（待 §2.3/§4.4 签名实现）
 
 ### TC-SIG-03 指纹确认后签名触发
 - **输入**：指纹授权结果 true/false
 - **期望**：true → 进入签名流程；false → 中止且不产生任何签名对象
-- **当前状态**：✅ 可执行（UI/授权层逻辑；签名本体仍阻塞见 TC-SIG-02）
+- **当前状态**：✅ 已实测 2/2 通过（2026-10-14：隐私地址 + 指纹成功 → 进入签名入口；指纹取消 → 直接失败、不产生签名对象）
 
 ---
 
@@ -204,10 +219,10 @@ flutter test test/            # 或按本清单编号建 tc_drv/tc_mint 等测�
 | 组 | ✅ 可执行 | 🟡 部分 | 🔴 阻塞 |
 | --- | --- | --- | --- |
 | 派生 | 3 | 0 | 2 |
-| 签名 | 1 | 0 | 2 |
+| 签名 | 1 | 1 | 1 |
 | CT 收款 | 1 | 0 | 2 |
 | CT 付款 | 3 | 0 | 1 |
 | 铸造 | 3 | 2 | 0 |
 | 赎回 | 2 | 0 | 2 |
 | 明文回归 | 3 | 0 | 0 |
-| **合计** | **16** | **2** | **9** |
+| **合计** | **16** | **3** | **8** |

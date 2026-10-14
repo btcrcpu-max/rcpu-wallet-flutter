@@ -20,10 +20,15 @@ class Derivation {
   /// BIP44 路径：m/44'/60'/0'/0/0（BSC / Ethereum）
   static const String bscPath = "m/44'/60'/0'/0/0";
 
-  /// 原生 RCPU 明文路径（派生路径占位，随协议文档核对）
+  /// 原生 RCPU 明文路径。
+  /// 工程自定占位（非协议强制）：官方仓库未定义 Native RCPU 的 BIP32 路径常量，
+  /// Coin type 307 未在 SLIP-44 注册；派生路径属钱包实现层决策。
+  /// 与官方钱包导出地址的一致性待官方钱包源码/官方确认（docs/path-c-spec.md §4.1）。
   static const String nativePlainPath = "m/44'/307'/0'/0/0";
 
-  /// 原生 RCPU 隐私路径（默认 Path C）
+  /// 原生 RCPU 隐私路径（默认 Path C）。
+  /// 同为工程自定占位（非协议强制），沿用「change/privacy」分支习惯；
+  /// 定版依据同 [nativePlainPath]。
   static const String nativePrivatePath = "m/44'/307'/0'/1/0";
 
   final String mnemonic;

@@ -2,9 +2,10 @@
 
 > 目标：把当前工程中的协议占位替换为官方 Path C 实现，使隐私 `rcpux1...` 地址
 > 可真实派生、CT 交易可签名、CT 输出可 unblind。
-> **前置**：拿到官方 CT 协议文档（C1）与 Path C 规范（C2、C3）后按本清单执行；
+> **前置**：官方 Path C 规范已到位（**详见 `docs/path-c-spec.md`**，C1/C2 地址编码已解锁；
+> 仅「Native BIP32 派生路径」仍待官方钱包源码确认，见其 §4.1）；按本清单执行，
 > 每项改动均标注【当前占位】→【目标形态】→【验收标准】。
-> **模板**：待确认字段按 `docs/path-c-c1-c2-template.md`（C1/C2 两张回填表）向官方索取。
+> **模板（存档）**：`docs/path-c-c1-c2-template.md`（回填完成，仅作历史对照）。
 
 ## 0. 修改顺序总览（依赖关系）
 
@@ -35,7 +36,7 @@ C1/C2 文档到位
 
 | 项 | 当前占位 | 目标形态 |
 | --- | --- | --- |
-| 行 63-66 `_protocolEncode()` | `publicKey.sublist(0,20)` 拼 hex（fake 编码，非链上可用） | bech32 风格地址编码（前缀 `rcpux1` + checksum），并绑定 CT 公钥/viewing key 派生 |
+| 行 63-66 `_protocolEncode()` | `publicKey.sublist(0,20)` 拼 hex（fake 编码，非链上可用） | **bech32m** 编码（官方 `src/key_io.cpp` 已确认）：`0x00 || HASH160(compressed_pub) || compressed_pub(33B)` → ConvertBits 8→5 → `bech32m("rcpux", data)`；明文 `rcpu1` 用 **BECH32**（P2WPKH），勿混用。详见 `docs/path-c-spec.md` §3/§4 |
 
 **验收**：`deriveNativePrivateAddress()` 输出可被链上浏览器/桥校验，且与官方钱包导出地址一致。
 

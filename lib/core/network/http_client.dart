@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 /// HTTP 客户端统一封装：超时、重试、错误映射。
 class HttpClient {
-  static const _baseOptions = BaseOptions(
+  static final _baseOptions = BaseOptions(
     connectTimeout: Duration(seconds: 15),
     receiveTimeout: Duration(seconds: 20),
     headers: {'Content-Type': 'application/json'},

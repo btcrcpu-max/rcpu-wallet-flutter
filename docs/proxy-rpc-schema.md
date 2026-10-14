@@ -193,6 +193,59 @@
 
 ---
 
+## 6.1 C3 待确认契约细节（归档：2026-10-14）
+
+> 状态：⚠️ 草案待确认（C3）｜依据：官方 `view_seed` / rewind 公式（`doc/ct-path-c.md` §2.4）
+> 用途：约束 `resolve_ct` 入参/返回值与错误语义，供代理侧确认后定稿本节。
+
+基于官方 `view_seed` / rewind 公式，代理侧仍需确认以下各项：
+
+| 待确认项 | 当前已知 | 代理需明确 | 影响 |
+| --- | --- | --- | --- |
+| 输入 | 交易 hex / txid + viewing key | 是否接收 `view_seed` 或完整私钥？ | 安全边界 |
+| 输出 | 明文金额（micro） | 是否返回单笔明细 + 范围证明校验结果？ | UI 展示 |
+| 错误码 | — | 非本人输出返回什么？代理失败时是否降级？ | 客户端处理 |
+| 性能 | 每输出独立 ephemeral | 是否支持批量 unblind？超时策略？ | 体验 |
+| 权限 | viewing key 仅 rewind | 代理是否持久化 view key？审计日志？ | 安全合规 |
+| 降级 | 代理不可用 | 客户端是否展示「金额保密」？ | 与现有降级策略一致 |
+
+**最小契约草案（C3 提案，待代理侧确认）**：
+
+```json
+POST /rpc
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "resolve_ct",
+  "params": {
+    "txHex": "...",
+    "viewSeed": "hex...",
+    "ownScriptPubKey": "hex..."
+  }
+}
+```
+
+返回：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "amountMicro": 150000000,
+    "verified": true,
+    "error": null
+  }
+}
+```
+
+- 非本人输出返回 `{"amountMicro": null, "verified": false}`，**不抛异常**；
+- 代理失败（viewing key 错误 / 链不可达）按 §2 错误码返回（`-32002` / `-32001`）；
+- 与 §6 数组形态的关系：§6 为既有草案（`[txRef, ownAddress, viewingKey]`），
+  C3 定稿后以**对象形态**为准并回写 §6 —— 两处同步更新，禁止双轨并存。
+
+> 确认后由代理侧回填，同步更新 §6 与 §7 客户端兼容说明。
+
 ## 7. 客户端兼容说明（定稿待办）
 
 | 现状（native_rpc.dart） | 升级项 |

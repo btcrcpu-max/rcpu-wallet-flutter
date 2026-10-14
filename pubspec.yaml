@@ -26,6 +26,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  # Path C HKDF/ECDH 单测（test/tc_sig02_hkdf_test.dart）依赖
+  pointycastle: ^3.7.3
 
 flutter:
   uses-material-design: true
