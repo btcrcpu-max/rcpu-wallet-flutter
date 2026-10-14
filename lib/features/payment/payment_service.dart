@@ -64,7 +64,7 @@ class PaymentService {
       reason: '确认支付 ${amountMicro / 1e8} RCPU',
     );
     if (!authOk) {
-      return PaymentResult.fail('指纹验证失败');
+      return const PaymentResult.fail('指纹验证失败');
     }
 
     // 2. 构造交易（此处简化，实际需按地址类型构建）
@@ -78,10 +78,10 @@ class PaymentService {
     } on UnimplementedError {
       // Path C 未落地时的降级
       if (toAddress.startsWith('rcpux1')) {
-        return PaymentResult.fail('当前仅支持明文地址支付，隐私地址暂未开放');
+        return const PaymentResult.fail('当前仅支持明文地址支付，隐私地址暂未开放');
       }
       // 明文地址可走其他已实现路径
-      return PaymentResult.fail('原生签名暂未实现，请稍后重试');
+      return const PaymentResult.fail('原生签名暂未实现，请稍后重试');
     } catch (e) {
       return PaymentResult.fail('支付失败: $e');
     }

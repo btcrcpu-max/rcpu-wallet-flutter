@@ -37,8 +37,8 @@ class BridgeResult {
   final String message;
   final BridgeState? state;
 
-  const BridgeResult.ok(String this.message, {this.state}) : ok = true;
-  const BridgeResult.fail(String this.message) : ok = false, state = null;
+  const BridgeResult.ok(this.message, {this.state}) : ok = true;
+  const BridgeResult.fail(this.message) : ok = false, state = null;
 }
 
 /// 桥模块状态机 Provider。
@@ -187,7 +187,7 @@ class BridgeNotifier extends StateNotifier<BridgeState> {
     if (amountMicro < Amount.minDepositMicro) {
       return const BridgeResult.fail('赎回金额过小');
     }
-    state = BridgeState(
+    state = const BridgeState(
       phase: 'redeem',
       state: 'processing',
       estimatedTimeMinutes: 15,
@@ -210,7 +210,7 @@ class BridgeNotifier extends StateNotifier<BridgeState> {
       );
       return BridgeResult.ok('赎回已广播，RCPU 将直接到账原生余额', state: state);
     } catch (e) {
-      state = BridgeState(
+      state = const BridgeState(
         phase: 'redeem',
         state: 'failed',
         errorCode: 'REDEEM_FAILED',

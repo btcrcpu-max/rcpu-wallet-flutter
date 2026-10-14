@@ -21,7 +21,7 @@ class BscRpcClient {
   final String rpcUrl;
   late final Web3Client _client;
 
-  BscRpcClient({String this.rpcUrl = defaultBscRpc}) {
+  BscRpcClient({this.rpcUrl = defaultBscRpc}) {
     _client = Web3Client(rpcUrl, http.Client());
   }
 

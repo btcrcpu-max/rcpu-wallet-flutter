@@ -34,9 +34,9 @@ class Derivation {
   final String mnemonic;
   late final Uint8List _seed;
 
-  Derivation(String this.mnemonic) {
+  Derivation(this.mnemonic) {
     if (!bip39.validateMnemonic(mnemonic.trim())) {
-      throw FormatException('助记词校验失败');
+      throw const FormatException('助记词校验失败');
     }
     _seed = Uint8List.fromList(bip39.mnemonicToSeed(mnemonic.trim()));
   }
