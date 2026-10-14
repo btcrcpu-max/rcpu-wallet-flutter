@@ -102,9 +102,7 @@ class SignatureService {
     final spendPub = Bip340.pubKeyFromPriv(privKey);
     final xOnly = Bip340.xOnlyFromPub(spendPub);
 
-    if (prevOuts == null) {
-      prevOuts = _derivePrevOutsFromTx(tx, xOnly);
-    }
+    prevOuts ??= _derivePrevOutsFromTx(tx, xOnly);
     if (prevOuts.length != tx.inputs.length) {
       throw ArgumentError('prevOuts 数量（${prevOuts.length}）与输入数'
           '（${tx.inputs.length}）不一致');

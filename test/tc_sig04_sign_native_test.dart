@@ -14,7 +14,7 @@ import 'package:rcpu_wallet/core/crypto/signature.dart';
 /// 缺 prevOuts 上下文时给出明确错误指引。
 void main() {
   // 固定测试私钥（BIP340 向量 #1 私钥：B7E151...，确定性）。
-  final privHex = 'b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef';
+  const privHex = 'b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef';
 
   NativeTx buildSpendTx() {
     final xOnly = Bip340.xOnlyFromPub(Bip340.pubKeyFromPriv(_hex(privHex)));
