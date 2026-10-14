@@ -47,17 +47,17 @@ void main() {
       expect(Bip340.verify(pubkey, msg, sig), isTrue);
     });
 
-    test('向量 #2（官方 verify 失败锚点）：wrong msg → false', () {
+    test('向量 #2（verify=false 锚点）：篡改消息 → false', () {
       final pubkey = _hex(
           'DFF1D77F2A671C5F36183726DB2341BE58FEAE1DA2DECED843240F7B502BA659');
-      final msg = _hex(
-          '243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89');
+      // 基于官方向量 #1 的合法组合，篡改消息最后 1 字节（89→90），
+      // verify 必须返回 false。
       final sig = _hex(
           '6896BD60EEAE296DB48A229FF71DFE071BDE413E6D43F917DC8DCF8C78DE3341'
           '8906D11AC976ABCCB20B091292BFF4EA897EFCB639EA871CFA95F6DE339E4B0A');
-
       final tampered = _hex(
           '243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C90');
+
       expect(Bip340.verify(pubkey, tampered, sig), isFalse);
     });
   });
