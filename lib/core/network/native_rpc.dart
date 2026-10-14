@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../models/balance.dart';
 import '../models/ct_resolve_result.dart';
+import '../models/native_utxo.dart';
 import '../models/tx_record.dart';
 
 /// RPC 调用失败（错误码定义见 docs/proxy-rpc-schema.md §2）。
@@ -48,6 +49,26 @@ class NativeRpcClient {
     );
     final raw = (resp.data as Map<String, dynamic>)['result'] as String;
     return Balance(asset: 'native', raw: raw, micro: _parseMicro(raw));
+  }
+
+  /// 查询可用 UTXO（docs/proxy-rpc-schema.md §方法五）。
+  ///
+  /// 代理返回自有、未花费、已确认输出；CT 输出金额已 unblind。
+  /// 客户端据此做 UTXO 选择（`PaymentService._buildTxHex`）。
+  Future<List<NativeUtxo>> getUtxos(String address) async {
+    final resp = await _dio.post(
+      '/',
+      data: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 5,
+        'method': 'get_utxos',
+        'params': [address],
+      }),
+    );
+    final list = (resp.data as Map<String, dynamic>)['result'] as List;
+    return list
+        .map((e) => NativeUtxo.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// 广播交易，返回交易哈希。

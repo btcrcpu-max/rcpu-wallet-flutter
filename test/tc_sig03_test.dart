@@ -5,6 +5,7 @@ import 'package:rcpu_wallet/core/crypto/native_tx.dart';
 import 'package:rcpu_wallet/core/crypto/signature.dart';
 import 'package:rcpu_wallet/core/models/balance.dart';
 import 'package:rcpu_wallet/core/models/ct_resolve_result.dart';
+import 'package:rcpu_wallet/core/models/native_utxo.dart';
 import 'package:rcpu_wallet/core/models/tx_record.dart';
 import 'package:rcpu_wallet/core/network/native_rpc.dart';
 import 'package:rcpu_wallet/features/payment/payment_service.dart';
@@ -50,6 +51,11 @@ class _FakeNativeRpc implements NativeRpcClient {
   @override
   Future<Balance> getBalance(String address) async {
     throw UnimplementedError('TC-SIG-03 不涉及余额查询');
+  }
+
+  @override
+  Future<List<NativeUtxo>> getUtxos(String address) async {
+    throw UnimplementedError('TC-SIG-03 不涉及 UTXO 查询');
   }
 
   @override

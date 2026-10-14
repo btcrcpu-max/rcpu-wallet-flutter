@@ -249,6 +249,57 @@ POST /rpc
 
 > 代理侧确认后回填，同步更新 §6 与 §7 客户端兼容说明。
 
+## 6.2 方法五：`get_utxos`（客户端已落地，2026-10-14 定稿待代理侧对齐）
+
+> 状态：🟢 客户端契约已落地（`native_rpc.dart#getUtxos`，id=5）
+> 用途：为 `PaymentService._buildTxHex` 提供 UTXO 选择数据源（T5 实装完成）。
+> 锚定测试：`test/tc_payment_build_test.dart`（TC-PAY-02：method / id / params / 字段解析）。
+
+### 请求
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "method": "get_utxos",
+  "params": ["rcpu1..."]
+}
+```
+`params`：`[address]`（原生明文 `rcpu1...` 或隐私 `rcpux1...`）。
+
+### 成功响应
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "result": [
+    {
+      "txid": "<64 hex，内部字节序>",
+      "vout": 0,
+      "amountMicro": 250000000,
+      "scriptPubKey": "5120<64 hex>",
+      "confirmed": true,
+      "privacy": "ct"
+    }
+  ]
+}
+```
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| txid | string | 前一交易 hash，**内部字节序**（32B，与交易序列化原样一致，客户端不反转） |
+| vout | int | 输出索引 |
+| amountMicro | int | 可花费金额（micro；CT 输出须已由代理 unblind 成明文值） |
+| scriptPubKey | string | 该输出锁定脚本 hex（可签名输入须为 P2TR `5120 || x-only32`；客户端过滤非 P2TR / 未确认项） |
+| confirmed | bool | 是否已确认（未确认输出不可花费） |
+| privacy | string | `plain` / `ct`（ct 表示原始为机密输出） |
+
+返回**仅自有、未花费、已确认**输出；客户端侧仍二次过滤
+（`confirmed && isP2trInput`），代理可放宽过滤但不得返回他人输出。
+
+### 错误
+- `-32602` 地址格式非法；
+- `-32001` 链不可达或超时；
+- `-32003` UTXO 同步未完成（缓存未就绪，稍后重试）。
+
 ## 7. 客户端兼容说明（定稿待办）
 
 | 现状（native_rpc.dart） | 升级项 |
@@ -257,6 +308,7 @@ POST /rpc
 | `getHistory` 按数组解析 | 字段已对齐；补 `privacy` 字段到模型（可先忽略） |
 | ~~`resolveCtOutput` 抛 `UnimplementedError`~~ | ~~落地为 `resolve_ct` 调用~~ ✅ 已落地（2026-10-14）：`resolveCt` 按 §6.1 对象形态实现，错误码映射 `RpcException`，契约层锚定于 test/tc_ct_resolve_test.dart |
 | `broadcast` 按 `result` 字符串解析 | 改为对象取 `txid`，兼容旧字符串 |
+| `getUtxos`（新增，id=5） | ✅ 已落地（2026-10-14）：§6.2 契约，`NativeUtxo.fromJson` 解析，契约层锚定于 test/tc_payment_build_test.dart（TC-PAY-02） |
 
 ## 8. 验证清单（对接时逐条核对）
 

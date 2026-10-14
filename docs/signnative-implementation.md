@@ -1,6 +1,6 @@
 # signNative 原生交易签名实现方案（基于官方 Path C 规范）
 
-> 状态：**实现方案 v1.0**｜更新：2026-10-14
+> 状态：**实现方案 v1.1**｜更新：2026-10-14（T5 交易构造已实装：§7.3 / §8 步骤 5）
 > 依据：`docs/path-c-spec.md`（C1 已解锁的 Path C 官方规范）、官方仓库
 > `github.com/btcrcpu-max/rcpu`（`doc/ct-path-c.md`、`doc/confidential-transactions.md`、
 > `src/key_io.cpp`、`src/blind.cpp`）。
@@ -153,10 +153,10 @@ SignatureService.signNative(txHex, privateKeyHex):
 
 ### 7.3 `lib/features/payment/payment_service.dart`
 
-| 现实现 | 改造 |
+| 占位/现状 | 状态 |
 | --- | --- |
-| `_buildTxHex`（行 93-95）返回占位字符串 | 替换为 §4 交易构造：UTXO 选择、输出（含代理盲化回填点）、fee、sighash |
-| `confirmAndPay` 降级分支（行 78-87） | 保留 UnimplementedError 捕获作为「代理未就绪」提示；签名本体质感后移除占位分支 |
+| `_buildTxHex`（行 93-95）返回占位字符串 | **已落地（2026-10-14，T5）**：真实 UTXO 选择 + 输出构造 + fee + prevOuts 串接。明文收款 `rcpu1`：`get_utxos`（§6.2 契约）→ 过滤 `confirmed && P2TR` → 升序最小足够集合 → P2WPKH 收款输出（`0x00 0x14 || h160`）+ 找零（差额归 fee）→ version=2 / seq=0xfffffffd / locktime=0；隐私收款 `rcpux1` 本地无盲化能力 → fail-closed 抛 `UnimplementedError`（不静默降明文，path-c-spec §2.5）→ 上层降级提示「仅支持明文地址支付」。数据源经 `NativeRpcClient.getUtxos`（代理 `get_utxos`，方法号 5）。锚定测试：test/tc_payment_build_test.dart（TC-PAY-01：单/多输入选择、找零与 fee 守恒、P2WPKH 脚本、witness 64B、余额不足/无 P2TR/未确认/隐私降级全分支）。 |
+| `confirmAndPay` 降级分支（行 78-87） | 保留 `UnimplementedError` 捕获作为「隐私收款/代理未就绪」提示；明文收款路径已走完整签名广播链（`signNative(prevOuts)` → `broadcast`）。 |
 
 ### 7.4 `lib/core/utils/ct_resolver.dart` / `lib/core/network/native_rpc.dart`
 
@@ -173,6 +173,9 @@ SignatureService.signNative(txHex, privateKeyHex):
    代理/官方库实现，APP 侧先以 mock 通过 TC-SIG-03 占位流程；
 4. **Schnorr 签名**（依赖 2，不依赖 3）：BIP340/BIP341 输入签名 + 单测（构造-验签闭环）；
 5. **交易串接**：_buildTxHex 真实现 + 端到端仿真空投（无代理时明文收款路径可全链验证）。
+   **✅ 已落地（2026-10-14，T5）**：明文收款端到端闭合——`get_utxos` → UTXO 选择 →
+   P2WPKH 输出 + 找零 → BIP341 sighash → BIP340 签名（witness 64B）→ `broadcast`；
+   锚定测试 `test/tc_payment_build_test.dart`（TC-PAY-01 全分支 + TC-PAY-02 请求形态）。
 
 > 官方向量仍为准绳：路径 A/B 回归（Appendix A B1）、Extract/Expand（Appendix C C1）已过；
 > P2TR 输出/签名类目暂无官方附录向量，以「构造→本地反解析→金额一致」为验收。
