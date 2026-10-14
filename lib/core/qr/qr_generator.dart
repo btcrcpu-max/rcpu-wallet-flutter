@@ -43,7 +43,11 @@ class QrGenerator {
       data: data,
       version: QrVersions.auto,
       size: size,
-      foregroundColor: foreground,
+      eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: foreground),
+      dataModuleStyle: QrDataModuleStyle(
+        dataModuleShape: QrDataModuleShape.square,
+        color: foreground,
+      ),
       backgroundColor: background,
       padding: EdgeInsets.zero,
       gapless: true,
@@ -58,7 +62,14 @@ class QrGenerator {
       data: data,
       version: QrVersions.auto,
       gapless: true,
-      color: Colors.black,
+      eyeStyle: const QrEyeStyle(
+        eyeShape: QrEyeShape.square,
+        color: Colors.black,
+      ),
+      dataModuleStyle: const QrDataModuleStyle(
+        dataModuleShape: QrDataModuleShape.square,
+        color: Colors.black,
+      ),
     );
     painter.paint(canvas, Size(size, size));
     final picture = recorder.endRecording();

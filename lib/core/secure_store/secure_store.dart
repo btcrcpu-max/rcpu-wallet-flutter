@@ -5,7 +5,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// 助记词与本地密钥只允许存此存储，禁止明文写文件。
 class SecureStore {
   static const _keyMnemonic = 'rcpu_mnemonic';
-  static const _keyPasswordHash = 'rcpu_password_hash';
   static const _keyInitialized = 'rcpu_initialized';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage(

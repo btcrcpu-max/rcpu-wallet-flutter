@@ -7,7 +7,6 @@ import '../../core/models/bridge_state.dart';
 import '../../core/models/address.dart';
 import '../../core/network/bsc_rpc.dart';
 import '../../core/network/http_client.dart';
-import '../../core/network/native_rpc.dart';
 import '../../core/utils/amount.dart';
 
 /// 桥常量（已确认事实，勿改）。
@@ -57,7 +56,6 @@ class BridgeNotifier extends StateNotifier<BridgeState> {
   bool _apiAvailable = true;
   bool get apiAvailable => _apiAvailable;
 
-  NativeRpcClient get _native => _ref.read(nativeRpcProvider);
   BscRpcClient get _bsc => _ref.read(bscRpcProvider);
 
   /// 获取用户专属明文 rcpu1 存款地址。

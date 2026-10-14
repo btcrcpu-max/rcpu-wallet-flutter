@@ -20,13 +20,9 @@ class BscRpcClient {
 
   final String rpcUrl;
   late final Web3Client _client;
-  late final EthPrivateKey _signer;
 
-  BscRpcClient({String this.rpcUrl = defaultBscRpc, String? privateKeyHex}) {
+  BscRpcClient({String this.rpcUrl = defaultBscRpc}) {
     _client = Web3Client(rpcUrl, http.Client());
-    if (privateKeyHex != null && privateKeyHex.isNotEmpty) {
-      _signer = EthPrivateKey.fromHex(privateKeyHex);
-    }
   }
 
   /// 查询 wRCPU 余额（BEP-20 balanceOf）。
