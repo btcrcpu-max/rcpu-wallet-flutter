@@ -102,6 +102,7 @@ void main() {
   }
 
   group('TC-PAY-01 明文收款交易构造闭环', () {
+    test('单输入：输出金额 / 找零 / fee / P2WPKH 脚本 / witness 64B', () async {
       final rpc = _RecordingNativeRpc([
         utxo(150000000, p2trSpkHex), // 1.5 RCPU
       ]);
