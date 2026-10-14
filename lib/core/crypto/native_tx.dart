@@ -47,7 +47,7 @@ class NativeTxIn {
     required this.scriptSig,
     required this.sequence,
     List<Uint8List>? witness,
-  }) : witness = witness ?? const [];
+  }) : witness = witness ?? <Uint8List>[];
 
   bool get isTaproot => witness.any((w) => w.length == 64);
 }
