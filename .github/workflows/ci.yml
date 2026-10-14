@@ -14,7 +14,9 @@
 #   未配置 secrets 时流水线仍可运行（构建 debug APK），签名步骤显式报告缺失。
 #
 # 版本口径：pubspec.yaml sdk >=3.3.0 <4.0.0，web3dart ^2.7.3；
-# 注：3.22.4 未收录于官方 releases.json（stable 存在 3.22.0-3.22.3），改采 3.24.5。
+# 注：3.22.4 未收录于官方 releases.json（stable 存在 3.22.0-3.22.3）；
+# 3.24.5 的 ThemeData.cardTheme 仍是 CardTheme（CardThemeData 自 3.29 引入），
+# 工程代码按 CardThemeData 编写，故 CI 对齐本机开发环境 Flutter 3.47.7。
 
 name: CI
 
@@ -30,7 +32,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FLUTTER_VERSION: '3.24.5'
+  FLUTTER_VERSION: '3.47.7'
 
 jobs:
   # ------------------------------------------------------------------ #
