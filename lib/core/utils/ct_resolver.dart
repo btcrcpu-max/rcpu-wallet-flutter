@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:pointycastle/export.dart';
 
-import '../models/ct_resolve_result.dart';
 import '../network/native_rpc.dart';
 
 /// Path C 密钥派生原语（官方 `doc/ct-path-c.md` Appendix A/C 向量锚定于

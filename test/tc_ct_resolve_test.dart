@@ -20,6 +20,9 @@ void main() {
   /// 记录最后一次收到的 JSON-RPC 请求体。
   Map<String, dynamic>? lastRequest;
 
+  /// 各用例设置应答；返回 json 可序列化对象。
+  Map<String, dynamic> Function()? respond;
+
   setUp(() async {
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     base = Uri(scheme: 'http', host: '127.0.0.1', port: server.port);
@@ -29,9 +32,10 @@ void main() {
           ContentType('application', 'json', charset: 'utf-8');
       final body = await utf8.decoder.bind(req).join();
       lastRequest = jsonDecode(body) as Map<String, dynamic>;
-      // 由各用例自行覆写 handler 前，先检查是否设置了应答。
-      if (respond != null) {
-        req.response.write(jsonEncode(respond!()));
+      // 由各用例在 test 内覆写应答闭包；未覆写时返回内部错误。
+      final handler = respond;
+      if (handler != null) {
+        req.response.write(jsonEncode(handler()));
       } else {
         req.response.statusCode = HttpStatus.internalServerError;
         req.response.write(jsonEncode({'jsonrpc': '2.0', 'error': {'code': -32603}}));
@@ -43,9 +47,6 @@ void main() {
   tearDown(() async {
     await server.close(force: true);
   });
-
-  /// 各用例设置应答；返回 json 可序列化对象。
-  Map<String, dynamic> Function()? respond;
 
   NativeRpcClient client() => NativeRpcClient(baseUrl: base.toString());
 
