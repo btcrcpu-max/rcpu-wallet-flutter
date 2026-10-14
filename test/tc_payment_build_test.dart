@@ -50,7 +50,7 @@ class _RecordingNativeRpc implements NativeRpcClient {
 
   @override
   Future<Balance> getBalance(String address) async =>
-      Balance(asset: 'native', raw: '0', micro: 0);
+      const Balance(asset: 'native', raw: '0', micro: 0);
 
   @override
   Future<List<NativeUtxo>> getUtxos(String address) async {
@@ -101,14 +101,7 @@ void main() {
     );
   }
 
-  PaymentService serviceWith(List<NativeUtxo> utxos) => PaymentService(
-        biometric: _FakeBiometric(true),
-        signature: SignatureService(),
-        nativeRpc: _RecordingNativeRpc(utxos),
-      );
-
   group('TC-PAY-01 明文收款交易构造闭环', () {
-    test('单输入：输出金额 / 找零 / fee / P2WPKH 脚本 / witness 64B', () async {
       final rpc = _RecordingNativeRpc([
         utxo(150000000, p2trSpkHex), // 1.5 RCPU
       ]);
@@ -226,7 +219,7 @@ void main() {
 
     test('无 P2TR 可签名输入（仅明文 P2WPKH 锁定）→ 明确失败', () async {
       // P2WPKH 脚本对输入侧不可签（签名侧仅支持 P2TR key-path）
-      final p2wpkhSpk = '0014' + '11' * 20;
+      final p2wpkhSpk = '0014${'11' * 20}';
       final rpc = _RecordingNativeRpc([
         utxo(150000000, p2wpkhSpk),
       ]);
@@ -255,7 +248,12 @@ void main() {
         scriptPubKey: p2trSpkHex,
         confirmed: false,
       );
-      final service = serviceWith([unconfirmed]);
+      final rpc = _RecordingNativeRpc([unconfirmed]);
+      final service = PaymentService(
+        biometric: _FakeBiometric(true),
+        signature: SignatureService(),
+        nativeRpc: rpc,
+      );
       final result = await service.confirmAndPay(
         toAddress: plainAddress.value,
         amountMicro: 100000000,
@@ -288,7 +286,7 @@ void main() {
                 'txid': '00' * 32,
                 'vout': 0,
                 'amountMicro': 250000000,
-                'scriptPubKey': '5120' + '11' * 32,
+                'scriptPubKey': '5120${'11' * 32}',
                 'confirmed': true,
                 'privacy': 'ct',
               },

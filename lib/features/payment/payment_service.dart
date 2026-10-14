@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import '../../core/biometric/biometric_auth.dart';
 import '../../core/crypto/bech32.dart';
-import '../../core/crypto/bip341.dart';
 import '../../core/crypto/native_tx.dart';
 import '../../core/crypto/signature.dart';
 import '../../core/models/address.dart';
