@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pointycastle/export.dart';
+
+import 'package:rcpu_wallet/core/utils/ct_resolver.dart';
 
 /// TC-SIG-02 HKDF/ECDH 层单测（对应 docs/path-c-spec.md §5 官方向量）。
 ///
@@ -16,10 +16,10 @@ import 'package:pointycastle/export.dart';
 /// - `deriveRewindNonceFromViewSeed`（HKDF-Expand：info=scriptPubKey||0x01||le64(64)，L=32）
 /// - 不同 scriptPubKey 得到不同 nonce（info 绑定收付脚本，view_seed 不绑定）
 ///
-/// 说明：本测试不依赖地址派生、不依赖代理，可直接验证 HKDF 层确定性，
-/// 从而**部分解锁 TC-SIG-02**（签名向量层）；签名本体 `signNative`
-/// 仍为占位，见 docs/ct-test-cases.md §2 与 docs/path-c-spec.md §4.4。
-/// 占位集中在文件底部，待 `ct_resolver` 落地后迁移至 lib。
+/// 说明：实现已迁移至 `lib/core/utils/ct_resolver.dart`（2026-10-14，T4）；
+/// 本文件仅锚定官方向量，验证迁移后逐字节一致。
+/// TC-SIG-02 已解锁：HKDF 层官方向量（4/4）+ BIP340 官方向量锚定
+/// （tc_bip340_test.dart 8/8，另见 TC-SIG-04 signNative 闭环）。
 void main() {
   group('TC-SIG-02 Path C HKDF/ECDH（官方 Appendix A/C 向量）', () {
     // Appendix A（B1）共享秘密；Appendix C（C1）spk / 预期输出
@@ -54,36 +54,6 @@ void main() {
       expect(nonceA, isNot(equals(nonceB)));
     });
   });
-}
-
-// --- 占位实现（按官方规范，待迁移至 lib/core/utils/ct_resolver.dart） ---
-
-/// view_seed = HKDF-Extract(salt = "rcpu-pathc-v1", ikm = ss)
-///            = HMAC-SHA256(key = "rcpu-pathc-v1", msg = ss)
-Uint8List deriveViewSeed(Uint8List ss) {
-  final salt = utf8.encode('rcpu-pathc-v1');
-  final hmac = HMac(SHA256Digest(), 64)..init(KeyParameter(salt));
-  return hmac.process(ss);
-}
-
-/// nonce = HKDF-Expand(PRK = view_seed,
-///                     info = scriptPubKey || 0x01 || le64(64), L = 32)
-/// 单块展开：T(1) = HMAC(PRK, info || 0x01)，取前 32 字节。
-Uint8List deriveRewindNonceFromViewSeed(Uint8List viewSeed, Uint8List scriptPubKey) {
-  final info = Uint8List.fromList([
-    ...scriptPubKey,
-    0x01,
-    0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // le64(64)
-  ]);
-  final hmac = HMac(SHA256Digest(), 64)..init(KeyParameter(viewSeed));
-  final block = hmac.process(Uint8List.fromList([...info, 0x01]));
-  return block.sublist(0, 32);
-}
-
-/// nonce = HKDF 全流程：先 Extract 得到 view_seed，再 Expand 得到 rewind nonce。
-Uint8List derivePathCNonce(Uint8List ss, Uint8List scriptPubKey) {
-  final viewSeed = deriveViewSeed(ss);
-  return deriveRewindNonceFromViewSeed(viewSeed, scriptPubKey);
 }
 
 Uint8List hexToBytes(String hex) => Uint8List.fromList(

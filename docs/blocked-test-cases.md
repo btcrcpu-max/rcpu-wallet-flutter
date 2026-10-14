@@ -29,8 +29,8 @@
 | TC-DRV-05 | spending/viewing 双钥派生 | C1/C2 | 派生只产出单一密钥，key bundle（spending/viewing）结构未定 | 双钥分别按官方规则派生，均可从助记词稳定恢复 |
 | TC-SIG-02 | 原生 CT 交易签名通过官方向量 | C1 | `signNative` 抛出 `UnimplementedError` | 按 C1 CT 签名规范实现，官方向量断言全部通过 |
 | TC-SIG-03 | 指纹确认后触发签名 | 支付流程 | `payment_service` 流程未实现；无「授权→签名→中止」分支 | 指纹授权 **true** → 生成签名对象并进入广播；**false** → 中止且不产生签名对象 |
-| TC-CT-IN-01 | CT 收款到账（代理 unblind） | C3/C4 | 代理 `resolve_ct` 未落地；余额仅按明文统计 | 代理完成 ECDH + 解承诺 + range proof，本人 CT 输出计入余额（`ctRaw` 正确） |
-| TC-CT-IN-02 | 单笔 CT 明细本地解析 | C1/C3/C4 | `ct_resolver.resolveCtOutput` 占位（抛 `UnimplementedError`） | 单笔 CT 明细可解析：金额 / 对手方 / 时间 / 隐私标记 |
+| TC-CT-IN-01 | CT 收款到账（代理 unblind） | C3/C4 | 客户端 `resolve_ct` 契约已落地（§6.1 对象形态）；真实代理服务未部署，余额仍按明文统计 | 代理完成 ECDH + 解承诺 + range proof，本人 CT 输出计入余额（`ctRaw` 正确）；客户端契约层已由 tc_ct_resolve_test.dart 锚定 |
+| ~~TC-CT-IN-02~~ | ~~单笔 CT 明细本地解析~~ | ~~C1/C3/C4~~ | ~~`ct_resolver` / `resolveCtOutput` 占位~~ | ✅ 已解锁（2026-10-14）：`resolve_ct` 契约（金额 + verified）落地于 `ct_resolver.dart` / `native_rpc.dart`，锚定 tc_ct_resolve_test.dart；对手方/时间字段待 `get_history` privacy 模型补齐 |
 | TC-CT-OUT-02 | 隐私付款签名广播 | C1/C4 | `signNative` 占位 + `broadcast_tx` 链路未通 | 隐私付款签名后经代理广播成功，返回 `txid` 且状态可查（错误映射 -32004） |
 | TC-MINT-03 | 桥 API 专属存款地址获取 | C3/C4 | 桥契约草案 v0.1；无真实服务，`fetchDepositAddress` 返回 null 降级 WebView | 按 `bridge-api-contract-c4.md` §2.1 返回专属明文 `rcpu1` 地址；`rcpux1` 拒绝（4002） |
 | TC-MINT-04 | 累计满 10 铸造真实到账 | C4 | 依赖桥真实处理；客户端仅 3 次退避轮询（10s/20s/40s） | 累计达标后 `state=minted`、`wrcpuTxHash` 非空，BSC 钱包 wRCPU 实际到账 |
@@ -47,15 +47,14 @@
 | C1/C2 | 2 | TC-DRV-02、TC-DRV-05 |
 | C2 单独 | 1 | TC-DRV-01 |
 | C3/C4 | 3 | TC-CT-IN-01、TC-MINT-03、TC-REDEEM-04 |
-| C1/C3/C4 | 1 | TC-CT-IN-02 |
 | C1/C4 | 2 | TC-CT-OUT-02、TC-REDEEM-03 |
 | C4 单独 | 1 | TC-MINT-04 |
 | 支付流程实现 | 1 | TC-SIG-03 |
-| **合计** | **12** | — |
+| **合计** | **11** | —（TC-CT-IN-02 已解锁，2026-10-14） |
 
 **解锁路径**：
-- C1/C2（官方文档）到位 → 解锁 4 项（TC-DRV-01/02/05、TC-SIG-02），并打通 TC-CT-IN-02、TC-CT-OUT-02、TC-REDEEM-03 的前提；
-- C3（viewing key 内部定稿）→ 解锁代理 unblind 相关（TC-CT-IN-01/02、TC-CT-OUT-02）；
+- C1/C2（官方文档）到位 → 解锁 4 项（TC-DRV-01/02/05、TC-SIG-02）、TC-CT-OUT-02 与 TC-REDEEM-03 的签名前提；
+- C3（viewing key 内部定稿）→ 客户端契约层已落地（TC-CT-IN-02 于 2026-10-14 解锁）；TC-CT-IN-01 剩余端到端依赖真实代理服务（ECDH + 解承诺 + range proof）；
 - C4（桥契约，草案见 `bridge-api-contract-c4.md`）→ 解锁 TC-MINT-03/04、TC-REDEEM-03/04 中的服务端依赖；
 - 支付流程实现（TC-SIG-03）不依赖外部，可与 C1–C4 并行推进。
 
@@ -64,7 +63,7 @@
 ## 4. 解锁操作指引
 
 1. **C1/C2 到位**：按 `docs/path-c-fix-list.md` 执行代码修改（`derivation.dart` / `signature.dart`），随后移除 TC-DRV-01/02/05、TC-SIG-02 的 `skip` 并补官方向量断言；
-2. **C3 定稿**：`proxy-rpc-schema.md` §6 `resolve_ct` 落地，`ct_resolver.resolveCtOutput` 接代理；
+2. **C3 定稿**：✅ 客户端侧已落地（2026-10-14）：`proxy-rpc-schema.md` §6.1 对象形态实现于 `native_rpc.resolveCt` + `ct_resolver.resolveOutput`，tc_ct_resolve_test.dart 锚定；待真实代理部署后验收 TC-CT-IN-01；
 3. **C4 定稿**：按 `bridge-api-contract-c4.md` §8 验证清单逐条对桥服务验收，再移除 TC-MINT-03/04、TC-REDEEM-03/04 的 `skip`；
 4. **TC-SIG-03**：随 `payment_service` 实现（指纹授权分支）直接启用，无外部依赖。
 

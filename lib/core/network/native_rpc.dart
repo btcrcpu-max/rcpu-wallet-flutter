@@ -3,12 +3,24 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../models/balance.dart';
+import '../models/ct_resolve_result.dart';
 import '../models/tx_record.dart';
+
+/// RPC 调用失败（错误码定义见 docs/proxy-rpc-schema.md §2）。
+class RpcException implements Exception {
+  final int code;
+  final String message;
+
+  const RpcException(this.code, this.message);
+
+  @override
+  String toString() => 'RpcException($code): $message';
+}
 
 /// 原生链 RPC 客户端。
 ///
-/// 连接公开节点 RPC 7337 或轻量代理；CT 输出解析优先由代理完成，
-/// APP 侧保留 [resolveCtOutput] 占位供本地 unblind 储备。
+/// 连接公开节点 RPC 7337 或轻量代理；CT 输出解析由代理完成
+/// （`resolve_ct` 契约，见 [resolveCt]）。
 class NativeRpcClient {
   /// 默认公开节点；生产环境经轻量代理转发并缓存余额。
   final String baseUrl;
@@ -66,9 +78,47 @@ class NativeRpcClient {
     return list.map((e) => TxRecord.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  /// 解析 CT 输出为明文金额（占位：轻量代理优先，本地实现储备）。
-  Future<String?> resolveCtOutput(String txHex) async {
-    throw UnimplementedError('CT unblind 待接入代理或本地实现');
+  /// 解析 CT 输出为明文金额（docs/proxy-rpc-schema.md §6.1 对象形态契约）。
+  ///
+  /// - [txHex]：待解析交易 hex（或 txid，按代理契约）；
+  /// - [viewSeed]：Path C view_seed（hex，由 [CtResolver] 提供）；
+  /// - [ownScriptPubKey]：本人隐私地址输出脚本（hex），用于匹配输出。
+  ///
+  /// 非本人输出返回 `CtResolveResult.amountMicro == null`（不抛异常）；
+  /// 代理失败（viewing key 错误 / 链不可达）抛 [RpcException]。
+  Future<CtResolveResult> resolveCt({
+    required String txHex,
+    required String viewSeed,
+    required String ownScriptPubKey,
+  }) async {
+    final resp = await _dio.post(
+      '/',
+      data: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 4,
+        'method': 'resolve_ct',
+        'params': {
+          'txHex': txHex,
+          'viewSeed': viewSeed,
+          'ownScriptPubKey': ownScriptPubKey,
+        },
+      }),
+    );
+    final body = resp.data as Map<String, dynamic>;
+    final err = body['error'];
+    if (err != null) {
+      final e = err as Map<String, dynamic>;
+      throw RpcException(
+        e['code'] as int? ?? -32603,
+        e['message'] as String? ?? 'resolve_ct 失败',
+      );
+    }
+    final result = body['result'] as Map<String, dynamic>;
+    final amountRaw = result['amountMicro'];
+    return CtResolveResult(
+      amountMicro: amountRaw == null ? null : (amountRaw as num).toInt(),
+      verified: result['verified'] as bool? ?? false,
+    );
   }
 
   static int _parseMicro(String raw) {

@@ -14,7 +14,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// | ~~TC-SIG-02 原生 CT 交易签名~~ | ~~C1~~ | 已解锁：BIP340 官方向量锚定于 tc_bip340_test.dart（8/8） |
 /// | TC-SIG-03 指纹确认后签名触发 | 签名流程 | payment 流程待实现 |
 /// | TC-CT-IN-01 CT 收款到账 | C3/C4 | 代理 unblind 契约待定 |
-/// | TC-CT-IN-02 单笔明细本地解析 | C1/C3/C4 | `ct_resolver` 占位 |
+/// | ~~TC-CT-IN-02 单笔明细本地解析~~ | ~~C1/C3/C4~~ | 已解锁：`resolve_ct` 代理契约（§6.1 对象形态）落地于
+///    `ct_resolver.dart` / `native_rpc.dart`，契约层锚定于 tc_ct_resolve_test.dart（金额 + verified） |
 /// | TC-CT-OUT-02 隐私付款签名广播 | C1/C4 | 签名 + 代理广播待通 |
 /// | TC-MINT-03 桥 API 专属地址 | C4 | 桥 API 契约待定 |
 /// | TC-MINT-04 真实铸造到账 | C4 | 依赖桥处理 |
@@ -31,7 +32,9 @@ void main() {
 
   group('🔴 依赖 C3/C4（代理契约）', () {
     test('TC-CT-IN-01 CT 收款到账（代理 unblind）', () {}, skip: '依赖 C3/C4：代理须完成 ECDH + 解承诺 + range proof');
-    test('TC-CT-IN-02 单笔 CT 明细本地解析', () {}, skip: '依赖 C1/C3/C4：ct_resolver 与 resolveCtOutput 均为占位');
+    // TC-CT-IN-02 已解锁：resolve_ct 契约（§6.1 对象形态）已落地于
+    // ct_resolver.dart / native_rpc.dart，契约请求/响应/错误码锚定于 tc_ct_resolve_test.dart；
+    // 端到端到账仍依赖真实代理，见 TC-CT-IN-01。
     test('TC-CT-OUT-02 隐私付款签名广播', () {}, skip: '依赖 C1/C4：signNative 占位 + 广播链路未通');
     test('TC-MINT-03 桥 API 专属存款地址获取', () {}, skip: '依赖 C3/C4：桥 API 契约待定（API 优先，WebView 降级已就绪）');
     test('TC-MINT-04 累计满 10 铸造真实到账', () {}, skip: '依赖 C4：真实铸造需桥处理');

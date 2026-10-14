@@ -162,8 +162,8 @@ SignatureService.signNative(txHex, privateKeyHex):
 
 | 现实现 | 改造 |
 | --- | --- |
-| `CtResolver.resolveOutput` 抛错 | 本地 unblind 储备：`0x04||X` → 重构 Y → ECDH(view_priv, e_pub) → HKDF rewind nonce → 解承诺（需代理数据校验） |
-| `NativeRpcClient.resolveCtOutput` 抛错 | 对接代理 `resolve_ct` 契约（`docs/proxy-rpc-schema.md` §6.1，txHex+viewSeed+ownScriptPubKey 形态） |
+| `CtResolver.resolveOutput` 抛错 | **已落地（2026-10-14）**：接代理 `resolve_ct`（docs/proxy-rpc-schema.md §6.1 对象形态，txHex+viewSeed+ownScriptPubKey），返回本人输出合计 / 非本人 null；HKDF 原语（deriveViewSeed / deriveRewindNonceFromViewSeed / derivePathCNonce）已迁移至 `ct_resolver.dart` 并由官方向量锚定（test/tc_sig02_hkdf_test.dart）。本地 unblind 储备未展开。 |
+| `NativeRpcClient.resolveCtOutput` 抛错 | **已落地（2026-10-14）**：替换为 `resolveCt`，按 `resolve_ct` 契约（§6.1）构造请求、解析 `amountMicro`/`verified`、错误码映射为 `RpcException`（-32002/-32001 等）；契约层锚定于 test/tc_ct_resolve_test.dart。 |
 
 ## 8. 实现顺序与验证
 

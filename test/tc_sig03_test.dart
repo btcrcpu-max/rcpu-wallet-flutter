@@ -4,6 +4,7 @@ import 'package:rcpu_wallet/core/biometric/biometric_auth.dart';
 import 'package:rcpu_wallet/core/crypto/native_tx.dart';
 import 'package:rcpu_wallet/core/crypto/signature.dart';
 import 'package:rcpu_wallet/core/models/balance.dart';
+import 'package:rcpu_wallet/core/models/ct_resolve_result.dart';
 import 'package:rcpu_wallet/core/models/tx_record.dart';
 import 'package:rcpu_wallet/core/network/native_rpc.dart';
 import 'package:rcpu_wallet/features/payment/payment_service.dart';
@@ -58,7 +59,13 @@ class _FakeNativeRpc implements NativeRpcClient {
   Future<List<TxRecord>> getHistory(String address, {int limit = 20}) async => [];
 
   @override
-  Future<String?> resolveCtOutput(String txHex) async => null;
+  Future<CtResolveResult> resolveCt({
+    required String txHex,
+    required String viewSeed,
+    required String ownScriptPubKey,
+  }) async {
+    return const CtResolveResult(amountMicro: null, verified: false);
+  }
 }
 
 void main() {

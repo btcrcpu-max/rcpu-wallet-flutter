@@ -22,7 +22,17 @@ class NativeService {
   Future<List<TxRecord>> getHistory(String address) =>
       _rpc.getHistory(address, limit: 20);
 
-  /// CT 输出本地解析储备（默认走代理，本地实现见 CtResolver）。
-  Future<int?> resolveCtOutput(String txHex) =>
-      CtResolver().resolveOutput(txHex, '', '');
+  /// 解析单笔交易中的本人 CT 输出为明文金额（走代理 `resolve_ct`）。
+  ///
+  /// 返回本人输出合计（micro）；非本人交易或不可解时返回 `null`。
+  Future<int?> resolveCtOutput(
+    String txHex, {
+    required String viewSeed,
+    required String ownScriptPubKey,
+  }) =>
+      CtResolver(_rpc).resolveOutput(
+        txHex: txHex,
+        viewSeed: viewSeed,
+        ownScriptPubKey: ownScriptPubKey,
+      );
 }

@@ -195,8 +195,11 @@
 
 ## 6.1 C3 待确认契约细节（归档：2026-10-14）
 
-> 状态：⚠️ 草案待确认（C3）｜依据：官方 `view_seed` / rewind 公式（`doc/ct-path-c.md` §2.4）
+> 状态：🟢 对象形态已被客户端落地（2026-10-14）；代理侧确认后定稿本节。
+> 依据：官方 `view_seed` / rewind 公式（`doc/ct-path-c.md` §2.4）
 > 用途：约束 `resolve_ct` 入参/返回值与错误语义，供代理侧确认后定稿本节。
+> 客户端实现：`native_rpc.dart#resolveCt` + `ct_resolver.dart`（契约层锚定于
+> `test/tc_ct_resolve_test.dart`：请求形态 / 成功 / 非本人 / -32002 / -32001 全链路）。
 
 基于官方 `view_seed` / rewind 公式，代理侧仍需确认以下各项：
 
@@ -244,7 +247,7 @@ POST /rpc
 - 与 §6 数组形态的关系：§6 为既有草案（`[txRef, ownAddress, viewingKey]`），
   C3 定稿后以**对象形态**为准并回写 §6 —— 两处同步更新，禁止双轨并存。
 
-> 确认后由代理侧回填，同步更新 §6 与 §7 客户端兼容说明。
+> 代理侧确认后回填，同步更新 §6 与 §7 客户端兼容说明。
 
 ## 7. 客户端兼容说明（定稿待办）
 
@@ -252,7 +255,7 @@ POST /rpc
 | --- | --- |
 | `getBalance` 按 `result` 字符串解析 | 改为对象（`totalRaw/plainRaw/ctRaw/ctCount/synced`），并兼容旧字符串（视为 `totalRaw`） |
 | `getHistory` 按数组解析 | 字段已对齐；补 `privacy` 字段到模型（可先忽略） |
-| `resolveCtOutput` 抛 `UnimplementedError` | 落地为 `resolve_ct` 调用（依赖 C3 viewing key 定稿） |
+| ~~`resolveCtOutput` 抛 `UnimplementedError`~~ | ~~落地为 `resolve_ct` 调用~~ ✅ 已落地（2026-10-14）：`resolveCt` 按 §6.1 对象形态实现，错误码映射 `RpcException`，契约层锚定于 test/tc_ct_resolve_test.dart |
 | `broadcast` 按 `result` 字符串解析 | 改为对象取 `txid`，兼容旧字符串 |
 
 ## 8. 验证清单（对接时逐条核对）
@@ -262,5 +265,5 @@ POST /rpc
 - [ ] `broadcast_tx` 明文交易广播成功，返回 txid 可查；
 - [ ] `broadcast_tx` 余额不足返回 `-32004`；
 - [ ] `get_history` 含 privacy 字段，CT 记录金额为明文；
-- [ ] `resolve_ct` 用正确 viewing key 返回金额；错误 key 返回 `-32002`；
-- [ ] 错误响应统一 JSON-RPC 结构，客户端错误映射文案完善。
+- [x] `resolve_ct` 用正确 viewing key 返回金额；错误 key 返回 `-32002`（客户端契约层已落地，tc_ct_resolve_test.dart；真实代理待部署验证）；
+- [x] 错误响应统一 JSON-RPC 结构，客户端错误映射文案完善（`RpcException` 映射已落地）。

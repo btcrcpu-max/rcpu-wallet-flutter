@@ -165,7 +165,7 @@ nonce     = HKDF-Expand(PRK=view_seed, info=scriptPubKey || 0x01 || le64(64), L=
 | C1 Path C 协议 | 官方 `doc/ct-path-c.md` | ✅ 已解锁（本规范为整理版） |
 | C2 地址编码 | 官方 `src/key_io.cpp` bech32m 细节 | ✅ 已解锁（§3） |
 | C2 密钥派生路径 | 官方钱包源码/确认 | ⚠️ 待官方（不阻塞编码层，阻塞 TC-DRV-01/02/05 的“与官方一致”断言） |
-| C3 viewing key / 代理 unblind | 内部自研 + 契约 | 🔶 部分（C1 已给出 view_seed/rewind 公式；`resolve_ct` 契约草案已归档至 `docs/proxy-rpc-schema.md` §6.1，代理侧确认后定稿） |
+| C3 viewing key / 代理 unblind | 内部自研 + 契约 | 🟢 客户端侧已落地（2026-10-14）：view_seed/rewind 公式已迁移 `ct_resolver.dart`，`resolve_ct` 契约（§6.1 对象形态）实现于 `native_rpc.resolveCt`，tc_ct_resolve_test.dart 锚定；待真实代理部署验收端到端 |
 | C4 桥 + 代理契约 | B1–B5 回填 | ⏳ 待桥侧（`docs/bridge-backfill-schema.md`） |
 
 > 关联文档：`docs/path-c-fix-list.md`（修改清单，§4 为其权威更新版）、`docs/path-c-check-list.md`（验收清单）、
