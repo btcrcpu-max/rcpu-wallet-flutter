@@ -4,6 +4,7 @@
 > 对象：`.github/workflows/ci.yml`（GitHub Actions）与 `.gitlab-ci.yml`（GitLab CI）。
 > 背景：流水线在未配置签名 secrets 时自动降级构建 debug APK（流水线不失败，但 release 产物不可发行）；
 > 配置以下 4 个变量后，restart 流水线即可产出 **release 签名 APK** 并执行 `apksigner` 签名校验。
+> **实测记录见 `docs/release-signing-trigger.md`（2026-10-14 已跑通签名构建并验签）**。
 
 ---
 

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:rcpu_wallet/core/biometric/biometric_auth.dart';
+import 'package:rcpu_wallet/core/crypto/native_tx.dart';
 import 'package:rcpu_wallet/core/crypto/signature.dart';
 import 'package:rcpu_wallet/core/models/balance.dart';
 import 'package:rcpu_wallet/core/models/tx_record.dart';
@@ -29,7 +30,11 @@ class _FakeBiometric implements BiometricAuth {
 
 class _FakeSignature implements SignatureService {
   @override
-  Future<String> signNative(String txHex, String privateKeyHex) async {
+  Future<String> signNative(
+    String txHex,
+    String privateKeyHex, {
+    List<NativePrevOut>? prevOuts,
+  }) async {
     throw UnimplementedError(
       '原生签名算法待协议文档确认（C1/C2）。'
       '当前仅支持明文地址支付，请使用 rcpu1 地址。',

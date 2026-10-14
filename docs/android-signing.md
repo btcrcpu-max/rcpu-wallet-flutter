@@ -45,28 +45,32 @@ storeFile=rcpu-release.jks
 
 ```kotlin
 import java.util.Properties
-import java.io.FileInputStream
 
-// 读取本地签名配置（不入库）
+// 读取本地签名配置（不入库）；rootProject.file 使 storeFile 相对 android/ 目录解析
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
 android {
     signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
-            storePassword = keystoreProperties["storePassword"] as String?
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            storeFile = keystoreProperties.getProperty("storeFile")?.let { rootProject.file(it) }
+            storePassword = keystoreProperties.getProperty("storePassword")
         }
     }
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
-            // 其他 release 配置（minify 等）按需补充
+            // key.properties 存在（CI 注入或本地配置）时使用自有 release 签名；
+            // 否则回退 debug 签名，保证 flutter run --release 可用。
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

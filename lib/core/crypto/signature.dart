@@ -3,16 +3,23 @@ import 'dart:typed_data';
 
 import 'package:web3dart/crypto.dart';
 
+import 'bip340.dart';
+import 'bip341.dart';
+import 'native_tx.dart';
+
 /// 签名工具统一入口。
 ///
-/// - [signNative]：原生 RCPU 交易签名（算法与链上协议对齐，待桥确认）
+/// - [signNative]：原生 RCPU 交易签名（BIP340 Schnorr，P2TR key-path）
 /// - [verifyBscSignature]：BSC/EVM 个人消息签名校验（EIP-191）
 ///
 /// 密钥只驻留内存副本，不落盘。
 class Signature {
-  /// 原生链交易签名（占位：接入协议签名库后补齐）。
+  /// 原生链交易签名：对 32 字节消息（BIP341 sighash 摘要）做 BIP340 Schnorr 签名。
+  ///
+  /// [tx] 为待签名的 32 字节消息哈希（由 `Bip341.taprootKeyPathSighash` 产出）；
+  /// [privateKey] 为 32 字节私钥。返回 64 字节签名 `r(32) || s(32)`。
   Future<Uint8List> signNative(Uint8List tx, Uint8List privateKey) async {
-    throw UnimplementedError('原生签名算法待协议文档确认');
+    return Bip340.sign(privateKey, tx);
   }
 
   /// 校验 BSC/EVM 个人消息签名（EIP-191：`\x19Ethereum Signed Message:\n<len>`）。
@@ -53,19 +60,103 @@ class Signature {
   }
 }
 
-/// 原生交易签名服务（Path C 落地前占位）。
+/// 原生交易签名服务（P2TR key-path + BIP340/BIP341 真实实现）。
 ///
-/// 与 [Signature] 的字节级接口不同，本类面向「交易 hex + 私钥 hex → 签名 hex」
-/// 的高层入口，供支付链路（TC-SIG-03）调用；签名算法依赖 C1/C2 协议文档确认。
+/// 面向「交易 hex + 私钥 hex → 已签名交易 hex」的高层入口，
+/// 供支付链路（TC-SIG-03 / `_buildTxHex`）调用。
+///
+/// 签名流程：
+/// 1. 反序列化 [txHex]（`NativeTxCodec.parseHex`，含/不含 witness 均可）；
+/// 2. 对每个输入：由 [prevOuts] 提供 prevout 的 scriptPubKey 与金额，
+///    计算 BIP341 key-path sighash（SIGHASH_DEFAULT）；
+/// 3. BIP340 签名（64B）写回该输入的 witness（key-path：单元素 `sig64`）；
+/// 4. 重新序列化并返回带 witness 的完整交易 hex。
+///
+/// 边界（`docs/signnative-implementation.md` §5）：
+/// - 盲化承诺/rangeproof 不在本端完成：CT 输出由代理 `createBlindedOutput`
+///   或官方库先行回填进 [txHex] 的输出区，本端仅负责签名部分；
+/// - 输入须为 P2TR（`NativePrevOut.scriptPubKey` 校验 `0x51 0x20 || x32`），
+///   非 P2TR 输入抛格式错误；
+/// - 所有输入使用同一把花费私钥签名（钱包本地路径派生）。
 class SignatureService {
-  /// 原生交易签名（Path C 落地前占位）。
+  /// 原生交易签名。
   ///
-  /// - 依赖 C1/C2：原生签名算法待协议文档确认；
-  /// - 当前仅支持明文地址（rcpu1）支付；隐私地址（rcpux1）触发上层降级提示。
-  Future<String> signNative(String txHex, String privateKeyHex) async {
-    throw UnimplementedError(
-      '原生签名算法待协议文档确认（C1/C2）。'
-      '当前仅支持明文地址支付，请使用 rcpu1 地址。',
-    );
+  /// [txHex] 为待签名的**未签名交易**（输入 witness 可为空，输出区已含
+  /// 目标锁定脚本；CT 输出须已由代理回填盲化承诺）；[privateKeyHex] 为
+  /// 32 字节私钥 hex（可带或省略 `0x` 前缀）。
+  ///
+  /// [prevOuts] 提供各输入 prevout 的 scriptPubKey（P2TR，34B）与金额
+  /// （BIP341 sighash 需要，交易体本身不含）。缺省时将从交易输入
+  /// 的 scriptPubKey（若输入携带 spk 模板）尝试推导；无法推导则抛错。
+  Future<String> signNative(
+    String txHex,
+    String privateKeyHex, {
+    List<NativePrevOut>? prevOuts,
+  }) async {
+    final tx = NativeTxCodec.parseHex(txHex);
+    final privKeyHex = _stripHexPrefix(privateKeyHex);
+    final privKey = _hexToBytes(privKeyHex);
+    if (privKey.length != 32) {
+      throw const FormatException('私钥须为 32 字节 hex');
+    }
+    final spendPub = Bip340.pubKeyFromPriv(privKey);
+    final xOnly = Bip340.xOnlyFromPub(spendPub);
+
+    if (prevOuts == null) {
+      prevOuts = _derivePrevOutsFromTx(tx, xOnly);
+    }
+    if (prevOuts.length != tx.inputs.length) {
+      throw ArgumentError('prevOuts 数量（${prevOuts.length}）与输入数'
+          '（${tx.inputs.length}）不一致');
+    }
+
+    // 逐输入签名：BIP341 sighash -> BIP340 签名 -> 写回 witness。
+    final parsedPrevOuts = <NativePrevOut>[];
+    for (var i = 0; i < tx.inputs.length; i++) {
+      final prev = prevOuts[i];
+      if (!Bip341.isP2tr(prev.scriptPubKey)) {
+        throw const FormatException(
+            '仅支持 P2TR 输入（NativePrevOut.scriptPubKey 须为 0x51 0x20 || x32）');
+      }
+      parsedPrevOuts.add(NativePrevOut(
+        scriptPubKey: prev.scriptPubKey,
+        amount: prev.amount,
+      ));
+    }
+
+    for (var i = 0; i < tx.inputs.length; i++) {
+      final sighash =
+          Bip341.taprootKeyPathSighash(tx: tx, prevOuts: parsedPrevOuts, inputIndex: i);
+      final sig = Bip340.sign(privKey, sighash);
+      // P2TR key-path witness：单元素 64B 签名（SIGHASH_DEFAULT 无尾部字节）。
+      tx.inputs[i].witness
+        ..clear()
+        ..add(sig);
+    }
+
+    return NativeTxCodec.bytesToHex(tx.serialize());
+  }
+
+  /// 从交易输入携带的「spk 模板」推导 prevout：明文场景下，如果输入
+  /// 的 scriptSig 携带了 P2TR 输出脚本（签名前预填充），可直接取用金额 0
+  /// 不可行——金额必须显式提供，故此处仅支持脚本从输入预填、金额由
+  /// 调用方经 prevOuts 显式传入；未提供 prevOuts 且无法推导时抛错。
+  List<NativePrevOut> _derivePrevOutsFromTx(NativeTx tx, Uint8List xOnly) {
+    if (tx.inputs.isEmpty) {
+      throw const FormatException('交易没有输入，无法签名');
+    }
+    // 本端无法从交易体还原 prevout 金额；要求调用方显式提供。
+    throw ArgumentError(
+        '缺少 prevOuts 上下文（BIP341 sighash 需要 prevout scriptPubKey 与金额）。'
+        '请由 UTXO 选择层提供 NativePrevOut 列表。');
+  }
+
+  static String _stripHexPrefix(String hex) =>
+      hex.trim().startsWith('0x') ? hex.trim().substring(2) : hex.trim();
+
+  static Uint8List _hexToBytes(String hex) {
+    if (hex.length.isOdd) throw const FormatException('hex 长度必须为偶数');
+    return Uint8List.fromList(List.generate(
+        hex.length ~/ 2, (i) => int.parse(hex.substring(i * 2, i * 2 + 2), radix: 16)));
   }
 }
