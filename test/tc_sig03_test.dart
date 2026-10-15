@@ -71,6 +71,9 @@ class _FakeNativeRpc implements NativeRpcClient {
   Future<List<TxRecord>> getHistory(String address, {int limit = 20}) async => [];
 
   @override
+  Future<int> getBlockHeight() async => 0;
+
+  @override
   Future<CtResolveResult> resolveCt({
     required String txHex,
     required String viewSeed,

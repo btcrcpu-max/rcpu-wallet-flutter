@@ -51,16 +51,33 @@ class NativeRpcClient {
 
   /// 通用 JSON-RPC 请求封装，统一处理错误与 null result。
   Future<Map<String, dynamic>> _rpc(String method, dynamic params, {int id = 1}) async {
-    final resp = await _dio.post(
-      '/',
-      data: jsonEncode({
-        'jsonrpc': '2.0',
-        'id': id,
-        'method': method,
-        'params': params,
-      }),
-    );
-    final body = resp.data as Map<String, dynamic>;
+    final Response<dynamic> resp;
+    try {
+      resp = await _dio.post(
+        '/',
+        data: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': id,
+          'method': method,
+          'params': params,
+        }),
+      );
+    } on DioException catch (e) {
+      // 网络层错误（超时 / 连接拒绝 / DNS / HTTP 状态码异常）转为可读信息，
+      // 供首页同步状态与余额降级提示区分「节点未连接」与「余额为 0」。
+      final detail = e.message ?? e.type.toString();
+      final status = e.response?.statusCode;
+      throw RpcException(
+        -32000,
+        status != null ? '节点 HTTP $status: $detail' : '节点网络错误: $detail',
+      );
+    }
+    final data = resp.data;
+    if (data is! Map<String, dynamic>) {
+      // 代理/反代异常时可能返回 HTML 或纯文本（如 502 页面）。
+      throw RpcException(-32000, '节点返回非 JSON 响应（HTTP ${resp.statusCode}）');
+    }
+    final body = data;
     final err = body['error'];
     if (err != null) {
       final e = err as Map<String, dynamic>;
@@ -120,6 +137,24 @@ class NativeRpcClient {
         final totalAmount = result['total_amount'] as num? ?? 0;
         final raw = totalAmount.toStringAsFixed(8);
         return Balance(asset: 'native', raw: raw, micro: _parseMicro(raw));
+      }
+      rethrow;
+    }
+  }
+
+  /// 查询当前区块高度（首页同步状态指示）。
+  ///
+  /// 优先 `getblockcount`；若代理层未放行该方法则回退 `getblockchaininfo`。
+  /// 抛 [RpcException] 表示节点不可达或 RPC 错误，调用方据此显示「未连接」。
+  Future<int> getBlockHeight() async {
+    try {
+      final body = await _rpc('getblockcount', const [], id: 20);
+      return (body['result'] as num?)?.toInt() ?? 0;
+    } on RpcException catch (e) {
+      if (_isMethodNotFound(e)) {
+        final body = await _rpc('getblockchaininfo', const [], id: 21);
+        final result = body['result'] as Map<String, dynamic>? ?? {};
+        return (result['blocks'] as num?)?.toInt() ?? 0;
       }
       rethrow;
     }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/models/balance.dart';
+import '../native/node_sync.dart';
 import '../receive/receive_page.dart';
 import '../send/send_page.dart';
 import '../settings/settings_page.dart';
@@ -67,7 +68,16 @@ class _HomeTab extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          // 顶部栏：标题 + 节点同步状态（右上角小区块高度显示）
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('RCPU 钱包', style: theme.textTheme.titleLarge),
+              const _SyncChip(),
+            ],
+          ),
+          const SizedBox(height: 8),
           // 总资产卡片
           Card(
             child: Padding(
@@ -232,4 +242,87 @@ class _SettingsTabRouter extends StatelessWidget {
   const _SettingsTabRouter();
   @override
   Widget build(BuildContext context) => const SettingsPage();
+}
+
+/// 节点同步状态小标（首页右上角）。
+///
+/// 已连接：绿点 + 当前区块高度；未连接：红点 + 「节点未连接」。
+/// 点击弹出详情（端点 / 高度 / 错误原因 / 更新时间），并可手动重连。
+class _SyncChip extends ConsumerWidget {
+  const _SyncChip();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sync = ref.watch(nodeSyncProvider);
+    final theme = Theme.of(context);
+    final color =
+        sync.connected ? Colors.green : theme.colorScheme.error;
+    final label = sync.connected
+        ? (sync.height != null ? '高度 ${sync.height}' : '已连接')
+        : '节点未连接';
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => _showDetail(context, ref, sync),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.circle, size: 8, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(color: color),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDetail(BuildContext context, WidgetRef ref, NodeSyncStatus sync) {
+    final updated = sync.updatedAt;
+    final updatedText = updated == null
+        ? '—'
+        : '${updated.hour.toString().padLeft(2, '0')}:'
+            '${updated.minute.toString().padLeft(2, '0')}:'
+            '${updated.second.toString().padLeft(2, '0')}';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(sync.connected ? '节点已连接' : '节点未连接'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('端点: http://207.57.129.188/rpc'),
+            Text('区块高度: ${sync.height ?? '—'}'),
+            Text('更新时间: $updatedText'),
+            if (!sync.connected && sync.error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                '原因: ${sync.error}',
+                style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          if (!sync.connected)
+            TextButton(
+              onPressed: () {
+                ref.read(nodeSyncProvider.notifier).refresh();
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('重试连接'),
+            ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
 }
