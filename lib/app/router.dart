@@ -4,17 +4,15 @@ import 'package:go_router/go_router.dart';
 import '../features/bridge/bridge_page.dart';
 import '../features/home/home_page.dart';
 import '../features/receive/receive_page.dart';
-import '../features/scan/scan_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/wallet/wallet_init_page.dart';
 
 /// 应用路由。
 ///
 /// 路由清单（按文档第 3 章 feature-first 划分）：
-/// - `/`          首页（总资产 + 收款/付款/跨链入口）
+/// - `/`          首页（总资产 + 收款/跨链入口）
 /// - `/wallet`    钱包初始化（创建/导入助记词）
 /// - `/receive`   收款页
-/// - `/scan`      扫码付款页
 /// - `/bridge`    跨链页（铸造/赎回）
 /// - `/settings`  设置页
 ///
@@ -37,11 +35,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/receive',
         name: 'receive',
         builder: (context, state) => const ReceivePage(),
-      ),
-      GoRoute(
-        path: '/scan',
-        name: 'scan',
-        builder: (context, state) => const ScanPage(),
       ),
       GoRoute(
         path: '/bridge',

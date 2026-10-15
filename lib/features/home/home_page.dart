@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/models/balance.dart';
 import '../bridge/bridge_page.dart';
 import '../receive/receive_page.dart';
-import '../scan/scan_page.dart';
 import '../settings/settings_page.dart';
 import '../wallet/wallet_state.dart';
 
@@ -30,7 +29,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           ? _HomeTab(wallet: wallet, onQuickAction: _switchTab)
           : _InitGuide(onCreate: () => context.go('/wallet')),
       const _ReceiveTabRouter(),
-      const _ScanTabRouter(),
       const _BridgeTabRouter(),
       const _SettingsTabRouter(),
     ];
@@ -46,7 +44,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: '首页'),
           NavigationDestination(icon: Icon(Icons.qr_code_outlined), selectedIcon: Icon(Icons.qr_code), label: '收款'),
-          NavigationDestination(icon: Icon(Icons.qr_code_scanner_outlined), selectedIcon: Icon(Icons.qr_code_scanner), label: '扫码'),
           NavigationDestination(icon: Icon(Icons.swap_horiz_outlined), selectedIcon: Icon(Icons.swap_horiz), label: '跨链'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: '设置'),
         ],
@@ -125,9 +122,9 @@ class _HomeTab extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: () => onQuickAction(2), // 付款
-                  icon: const Icon(Icons.qr_code_scanner),
-                  label: const Text('付款'),
+                  onPressed: () => onQuickAction(2), // 跨链
+                  icon: const Icon(Icons.swap_horiz),
+                  label: const Text('跨链'),
                 ),
               ),
             ],
@@ -136,9 +133,9 @@ class _HomeTab extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () => onQuickAction(3), // 跨链
-              icon: const Icon(Icons.swap_horiz),
-              label: const Text('跨链（铸造 / 赎回）'),
+              onPressed: () => onQuickAction(3), // 设置
+              icon: const Icon(Icons.settings),
+              label: const Text('设置 / 网络'),
             ),
           ),
         ],
@@ -221,13 +218,6 @@ class _ReceiveTabRouter extends StatelessWidget {
   const _ReceiveTabRouter();
   @override
   Widget build(BuildContext context) => const ReceivePage();
-}
-
-/// 扫码页路由包装。
-class _ScanTabRouter extends StatelessWidget {
-  const _ScanTabRouter();
-  @override
-  Widget build(BuildContext context) => const ScanPage();
 }
 
 /// 跨链页路由包装。

@@ -1,5 +1,3 @@
-import 'package:mobile_scanner/mobile_scanner.dart';
-
 /// 扫码结果：解析后的付款目标。
 class ScannedPayment {
   final String address;
@@ -32,10 +30,10 @@ class ScannedPayment {
   }
 }
 
-/// 二维码扫描封装（mobile_scanner）。
+/// 扫码 URI 解析工具。
 ///
 /// 识别 `rcpu:` 前缀后解析地址、金额与资产；其余内容一律拒绝，
-/// 防止扫码误触网页或恶意 URI。
+/// 防止误触网页或恶意 URI。
 class QrScanner {
   /// 解析扫码文本为付款目标；非 rcpu: 协议抛 [FormatException]。
   static ScannedPayment parse(String raw) {
@@ -80,13 +78,4 @@ class QrScanner {
       return false;
     }
   }
-}
-
-/// 扫描控制器（mobile_scanner 控制器）。
-class ScannerController {
-  final MobileScannerController controller = MobileScannerController();
-
-  Future<void> start() => controller.start();
-  Future<void> stop() => controller.stop();
-  Future<void> dispose() => controller.dispose();
 }

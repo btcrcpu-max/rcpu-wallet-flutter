@@ -102,7 +102,7 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
             ),
             const SizedBox(height: 12),
             Text(
-              '扫码协议: $uri',
+              '支付协议: $uri',
               style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.outline),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
