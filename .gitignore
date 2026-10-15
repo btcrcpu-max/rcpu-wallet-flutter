@@ -15,3 +15,6 @@ android/key.properties
 # 系统与编辑器
 .DS_Store
 Thumbs.db
+gh_*.log
+gh_*.json
+gh_*_log*.txt
