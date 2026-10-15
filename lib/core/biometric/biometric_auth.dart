@@ -13,9 +13,10 @@ class BiometricAuth {
 
   /// 设备是否支持生物识别（硬件层面）。
   Future<bool> isAvailable() async {
-    final canCheck = await _auth.canCheckBiometrics ?? false;
-    final supported = await _auth.isDeviceSupported ?? false;
-    return canCheck && supported;
+    dynamic canCheck = await _auth.canCheckBiometrics;
+    dynamic supported = await _auth.isDeviceSupported();
+    return (canCheck is bool && canCheck == true) &&
+        (supported is bool && supported == true);
   }
 
   /// 已录入生物特征（用户已在系统里录了指纹/人脸）。
