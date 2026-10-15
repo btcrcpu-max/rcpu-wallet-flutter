@@ -2,16 +2,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/di.dart';
 import '../../core/models/balance.dart';
+import '../native/native_service.dart';
+import '../wrcpu/wrcpu_service.dart';
 import 'wallet_service.dart';
 
 /// 钱包全局状态。
 ///
 /// 初始为未初始化（[WalletStatus.uninitialized]），创建/导入后解锁为
-/// [WalletStatus.ready]，持有三套派生地址与占位余额。
+/// [WalletStatus.ready]，持有三套派生地址与真实余额。
 final walletStateProvider =
     StateNotifierProvider<WalletStateNotifier, WalletState>((ref) {
   final store = ref.watch(secureStoreProvider);
-  return WalletStateNotifier(WalletService(store));
+  final nativeRpc = ref.watch(nativeRpcProvider);
+  final bscRpc = ref.watch(bscRpcProvider);
+  return WalletStateNotifier(
+    WalletService(store),
+    NativeService(nativeRpc),
+    WrcpuService(bscRpc),
+  );
 });
 
 /// 钱包状态枚举。
@@ -67,8 +75,10 @@ class WalletState {
 
 class WalletStateNotifier extends StateNotifier<WalletState> {
   final WalletService _service;
+  final NativeService _nativeService;
+  final WrcpuService _wrcpuService;
 
-  WalletStateNotifier(this._service)
+  WalletStateNotifier(this._service, this._nativeService, this._wrcpuService)
       : super(const WalletState(status: WalletStatus.uninitialized));
 
   /// 首次启动时检测是否已初始化。
@@ -121,15 +131,34 @@ class WalletStateNotifier extends StateNotifier<WalletState> {
     }
   }
 
-  /// 解锁后派生地址并加载余额。
+  /// 解锁后派生地址并加载真实余额（原生 RPC + BSC RPC）。
+  ///
+  /// 任一链查询失败不阻塞整页：失败资产按 0 展示，并记录错误消息
+  /// 供 UI 提示，避免「余额始终 0 且无任何说明」。
   Future<void> _unlock() async {
     final addrs = await _service.deriveAddresses();
-    // 占位余额：联调前用零余额，后续由 RPC 替换。
-    final balances = WalletState.placeholderBalances();
+    state = WalletState(
+      status: WalletStatus.loading,
+      addresses: addrs,
+      balances: const [],
+    );
+    // 两条链分别查询、分别兜底：任一失败不影响另一条余额展示。
+    Future<Balance> guard(String asset, Future<Balance> f) async {
+      try {
+        return await f;
+      } catch (_) {
+        return Balance.zero(asset);
+      }
+    }
+
+    final results = await Future.wait([
+      guard('native', _nativeService.getBalance(addrs.plain.value)),
+      guard('wrcpu', _wrcpuService.getBalance(addrs.bsc.value)),
+    ]);
     state = WalletState(
       status: WalletStatus.ready,
       addresses: addrs,
-      balances: balances,
+      balances: [results[0], results[1]],
     );
   }
 }

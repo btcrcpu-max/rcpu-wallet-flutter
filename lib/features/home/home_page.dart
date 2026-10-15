@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/models/balance.dart';
 import '../bridge/bridge_page.dart';
 import '../receive/receive_page.dart';
+import '../send/send_page.dart';
 import '../settings/settings_page.dart';
 import '../wallet/wallet_state.dart';
 
@@ -224,7 +225,7 @@ class _ReceiveTabRouter extends StatelessWidget {
 class _PayTabRouter extends StatelessWidget {
   const _PayTabRouter();
   @override
-  Widget build(BuildContext context) => const BridgePage();
+  Widget build(BuildContext context) => const SendPage();
 }
 
 /// 设置页路由包装。

@@ -25,15 +25,48 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Future<void> _loadBioState() async {
     final bio = ref.read(biometricAuthProvider);
+    final available = await bio.isAvailable();
+    final hasEnrolled = await bio.hasEnrolledBiometrics();
     final enabled = await bio.isEnabled();
     if (mounted) {
-      setState(() => _bioEnabled = enabled);
+      setState(() {
+        _bioEnabled = enabled;
+      });
+      if (!available) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('当前设备不支持生物识别')),
+        );
+      } else if (!hasEnrolled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('系统未录入指纹/人脸，请先在系统设置中添加')),
+        );
+      }
     }
   }
 
   Future<void> _toggleBio(bool value) async {
     final bio = ref.read(biometricAuthProvider);
     if (value) {
+      // 先检测设备支持情况
+      final available = await bio.isAvailable();
+      if (!available) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('当前设备不支持生物识别')),
+          );
+        }
+        return;
+      }
+      final hasEnrolled = await bio.hasEnrolledBiometrics();
+      if (!hasEnrolled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('系统未录入指纹/人脸，请先在系统设置中添加')),
+          );
+        }
+        return;
+      }
+
       setState(() => _bioLoading = true);
       final ok = await bio.authenticate(reason: '开启生物识别以解锁钱包');
       setState(() => _bioLoading = false);
@@ -42,7 +75,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         if (mounted) setState(() => _bioEnabled = true);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('生物识别验证失败或未录入')),
+          const SnackBar(content: Text('生物识别验证失败')),
         );
       }
     } else {

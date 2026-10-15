@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
+import '../crypto/bech32.dart';
 import '../models/balance.dart';
 import '../models/ct_resolve_result.dart';
 import '../models/native_utxo.dart';
@@ -71,9 +72,31 @@ class NativeRpcClient {
     return body;
   }
 
-  /// 判断 [RpcException] 是否因代理方法不存在导致。
+/// 判断 [RpcException] 是否因代理方法不存在导致。
   bool _isMethodNotFound(RpcException e) =>
       e.message.contains('Method not found') || e.code == -32601;
+
+  /// 将 bech32 明文地址转换为 scantxoutset raw() 描述符。
+  ///
+  /// 明文 `rcpu1`（P2WPKH）：payload = `0x00 || hash160(20B)`，
+  /// scriptPubKey = `0014<hash160>`，描述符 `raw(0014<hash160>)`。
+  /// 隐私 `rcpux1`（CT 盲化输出）或解码失败返回 null —— 原生节点
+  /// 的 scantxoutset 无法读取 CT 金额，交由代理 resolve_ct 路径处理。
+  String? _rawDescriptorFor(String address) {
+    if (!address.startsWith('rcpu1')) return null;
+    try {
+      final payload = Bech32.decodeToBytes(address, isBech32m: false);
+      if (payload.length != 21 || payload[0] != 0x00) return null;
+      final hash160 = payload.sublist(1);
+      final sb = StringBuffer('0014');
+      for (final b in hash160) {
+        sb.write(b.toRadixString(16).padLeft(2, '0'));
+      }
+      return 'raw($sb)';
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// 查询原生余额（含 CT unblind 后合计）。
   Future<Balance> getBalance(String address) async {
@@ -83,10 +106,15 @@ class NativeRpcClient {
       return Balance(asset: 'native', raw: raw, micro: _parseMicro(raw));
     } on RpcException catch (e) {
       if (_isMethodNotFound(e)) {
-        // 回退：使用原生 scantxoutset 扫描 addr() 描述符
+        // 回退：使用原生 scantxoutset 扫描 raw() 描述符
+        final desc = _rawDescriptorFor(address);
+        if (desc == null) {
+          // 隐私地址或无法解析：原生 RPC 无法扫描 CT 输出
+          return Balance.zero('native');
+        }
         final body = await _rpc(
           'scantxoutset',
-          ['start', ['addr($address)']],
+          ['start', [desc]],
           id: 11,
         );
         final result = body['result'] as Map<String, dynamic>? ?? {};
@@ -109,12 +137,14 @@ class NativeRpcClient {
       return list
           .map((e) => NativeUtxo.fromJson(e as Map<String, dynamic>))
           .toList();
-    } on RpcException catch (e) {
+} on RpcException catch (e) {
       if (_isMethodNotFound(e)) {
-        // 回退：使用原生 scantxoutset 扫描 addr() 描述符
+        // 回退：使用原生 scantxoutset 扫描 raw() 描述符
+        final desc = _rawDescriptorFor(address);
+        if (desc == null) return const []; // 隐私地址：原生 RPC 无法扫描 CT
         final body = await _rpc(
           'scantxoutset',
-          ['start', ['addr($address)']],
+          ['start', [desc]],
           id: 15,
         );
         final result = body['result'] as Map<String, dynamic>? ?? {};
