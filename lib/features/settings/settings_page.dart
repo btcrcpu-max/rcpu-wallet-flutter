@@ -51,6 +51,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
+  /// 复制文本到剪贴板并提示（带 mounted 保护）。
+  Future<void> _copyAddress(String text, String label) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$label已复制')),
+    );
+  }
+
   Future<void> _exportMnemonic() async {
     final bio = ref.read(biometricAuthProvider);
     if (_bioEnabled) {
@@ -77,6 +86,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
 
     await Clipboard.setData(ClipboardData(text: mnemonic));
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('助记词已复制到剪贴板')),
     );
@@ -98,15 +108,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 subtitle: SelectableText(wallet.addresses!.plain.toString()),
                 trailing: IconButton(
                   icon: const Icon(Icons.copy),
-                  onPressed: () => Clipboard.setData(
-                    ClipboardData(text: wallet.addresses!.plain.toString()),
-                  ).then((_) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('已复制明文地址')),
-                      );
-                    }
-                  }),
+                  onPressed: () => _copyAddress(
+                    wallet.addresses!.plain.toString(),
+                    '明文地址',
+                  ),
                 ),
               ),
               ListTile(
@@ -115,15 +120,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 subtitle: SelectableText(wallet.addresses!.private.toString()),
                 trailing: IconButton(
                   icon: const Icon(Icons.copy),
-                  onPressed: () => Clipboard.setData(
-                    ClipboardData(text: wallet.addresses!.private.toString()),
-                  ).then((_) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('已复制隐私地址')),
-                      );
-                    }
-                  }),
+                  onPressed: () => _copyAddress(
+                    wallet.addresses!.private.toString(),
+                    '隐私地址',
+                  ),
                 ),
               ),
               ListTile(
@@ -132,15 +132,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 subtitle: SelectableText(wallet.addresses!.bsc.toString()),
                 trailing: IconButton(
                   icon: const Icon(Icons.copy),
-                  onPressed: () => Clipboard.setData(
-                    ClipboardData(text: wallet.addresses!.bsc.toString()),
-                  ).then((_) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('已复制 BSC 地址')),
-                      );
-                    }
-                  }),
+                  onPressed: () => _copyAddress(
+                    wallet.addresses!.bsc.toString(),
+                    'BSC 地址',
+                  ),
                 ),
               ),
             ]),
