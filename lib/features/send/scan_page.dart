@@ -57,7 +57,7 @@ class _ScanPageState extends State<ScanPage> {
         children: [
           MobileScanner(
             onDetect: _onDetect,
-            errorBuilder: (context, error) {
+            errorBuilder: (context, error, child) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),

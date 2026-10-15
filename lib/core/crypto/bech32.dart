@@ -120,7 +120,7 @@ class Bech32 {
     }
     final version = data[0];
     if (version < 0 || version > 16) {
-      throw const FormatException('witness version 非法: $version');
+      throw FormatException('witness version 非法: $version');
     }
     final isM = polymod == bech32mConst;
     if ((version == 0) == isM) {
