@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/di.dart';
 import '../../core/models/balance.dart';
-import '../../core/secure_store/secure_store.dart';
 import 'wallet_service.dart';
 
 /// 钱包全局状态。
@@ -13,9 +13,6 @@ final walletStateProvider =
   final store = ref.watch(secureStoreProvider);
   return WalletStateNotifier(WalletService(store));
 });
-
-/// 安全存储 Provider（已在 di.dart 定义，此处引用避免循环依赖）。
-final secureStoreProvider = Provider<SecureStore>((ref) => SecureStore());
 
 /// 钱包状态枚举。
 enum WalletStatus { uninitialized, loading, ready, error }

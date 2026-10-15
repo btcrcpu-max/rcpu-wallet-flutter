@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
-import '../../../core/models/address.dart';
 import '../../../core/models/balance.dart';
+import '../bridge/bridge_page.dart';
+import '../receive/receive_page.dart';
+import '../scan/scan_page.dart';
+import '../settings/settings_page.dart';
 import '../wallet/wallet_state.dart';
 
 /// 首页：总资产卡片 + 资产列表 + 底部导航。
@@ -18,11 +20,15 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   int _tabIndex = 0;
 
+  void _switchTab(int index) => setState(() => _tabIndex = index);
+
   @override
   Widget build(BuildContext context) {
     final wallet = ref.watch(walletStateProvider);
     final pages = <Widget>[
-      _HomeTab(wallet: wallet),
+      wallet.isReady
+          ? _HomeTab(wallet: wallet, onQuickAction: _switchTab)
+          : _InitGuide(onCreate: () => context.go('/wallet')),
       const _ReceiveTabRouter(),
       const _ScanTabRouter(),
       const _BridgeTabRouter(),
@@ -36,7 +42,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabIndex,
-        onDestinationSelected: (i) => setState(() => _tabIndex = i),
+        onDestinationSelected: _switchTab,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: '首页'),
           NavigationDestination(icon: Icon(Icons.qr_code_outlined), selectedIcon: Icon(Icons.qr_code), label: '收款'),
@@ -52,7 +58,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 /// 首页核心内容。
 class _HomeTab extends StatelessWidget {
   final WalletState wallet;
-  const _HomeTab({required this.wallet});
+  final ValueChanged<int> onQuickAction;
+  const _HomeTab({required this.wallet, required this.onQuickAction});
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +117,7 @@ class _HomeTab extends StatelessWidget {
             children: [
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: () => context.go('/receive'),
+                  onPressed: () => onQuickAction(1), // 收款
                   icon: const Icon(Icons.qr_code),
                   label: const Text('收款'),
                 ),
@@ -118,7 +125,7 @@ class _HomeTab extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: () => context.go('/scan'),
+                  onPressed: () => onQuickAction(2), // 付款
                   icon: const Icon(Icons.qr_code_scanner),
                   label: const Text('付款'),
                 ),
@@ -129,12 +136,48 @@ class _HomeTab extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () => context.go('/bridge'),
+              onPressed: () => onQuickAction(3), // 跨链
               icon: const Icon(Icons.swap_horiz),
               label: const Text('跨链（铸造 / 赎回）'),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 钱包未初始化引导（未创建/导入钱包时首页展示）。
+class _InitGuide extends StatelessWidget {
+  final VoidCallback onCreate;
+  const _InitGuide({required this.onCreate});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.account_balance_wallet, size: 72, color: theme.colorScheme.primary),
+              const SizedBox(height: 16),
+              Text('尚未创建钱包', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text('创建或导入钱包后即可收发 RCPU / wRCPU',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: onCreate,
+                icon: const Icon(Icons.add),
+                label: const Text('创建 / 导入钱包'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -161,10 +204,10 @@ class _AssetCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: iconColor.withAlpha(31),
-                  child: Icon(icon, color: iconColor),
-                ),
+        leading: CircleAvatar(
+          backgroundColor: iconColor.withAlpha(31),
+          child: Icon(icon, color: iconColor),
+        ),
         title: Text(assetName, style: theme.textTheme.titleMedium),
         subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
         trailing: Text(balance.raw, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
@@ -180,171 +223,23 @@ class _ReceiveTabRouter extends StatelessWidget {
   Widget build(BuildContext context) => const ReceivePage();
 }
 
-/// 收款页：地址展示 + 二维码。
-class ReceivePage extends ConsumerStatefulWidget {
-  const ReceivePage({super.key});
-
-  @override
-  ConsumerState<ReceivePage> createState() => _ReceivePageState();
-}
-
-class _ReceivePageState extends ConsumerState<ReceivePage> {
-  bool _isPrivate = true;
-  final _amountController = TextEditingController();
-
-  @override
-  void dispose() {
-    _amountController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final wallet = ref.watch(walletStateProvider);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    if (!wallet.isReady) {
-      return const _SkeletonPage(title: '收款', body: _CenteredMessage('钱包未初始化，请先创建或导入钱包'));
-    }
-
-    final addr = _isPrivate ? wallet.addresses!.private : wallet.addresses!.plain;
-    final uri = _buildUri(addr, _amountController.text);
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('收款')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // 地址类型切换
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: false, label: Text('明文 rcpu1')),
-                ButtonSegment(value: true, label: Text('隐私 rcpux1')),
-              ],
-              selected: {_isPrivate},
-              onSelectionChanged: (s) => setState(() => _isPrivate = s.first),
-            ),
-            const SizedBox(height: 20),
-            // 二维码
-            Center(
-              child: QrImageView(
-                data: uri,
-                size: 220,
-                backgroundColor: Colors.white,
-                padding: const EdgeInsets.all(12),
-              ),
-            ),
-            const SizedBox(height: 12),
-            // 地址
-            Card(
-              child: ListTile(
-                title: SelectableText(addr.toString(),
-                    style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'monospace')),
-                subtitle: Text(_isPrivate ? '隐私地址（推荐）' : '明文地址（仅限桥存款）'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.copy),
-                  onPressed: () {
-                    // 后续接入 Clipboard
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            // 金额输入
-            TextField(
-              controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: '金额（可选）',
-                suffixText: 'RCPU',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '扫码协议: $uri',
-              style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.outline),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _buildUri(Address addr, String amount) {
-    final base = 'rcpu:${addr.toString()}';
-    final a = amount.trim();
-    if (a.isNotEmpty) return '$base?amount=$a';
-    return base;
-  }
-}
-
 /// 扫码页路由包装。
 class _ScanTabRouter extends StatelessWidget {
   const _ScanTabRouter();
   @override
-  Widget build(BuildContext context) => const _SkeletonPage(
-        title: '扫码付款',
-        body: _CenteredMessage('扫码付款功能联调中'),
-      );
+  Widget build(BuildContext context) => const ScanPage();
 }
 
 /// 跨链页路由包装。
 class _BridgeTabRouter extends StatelessWidget {
   const _BridgeTabRouter();
   @override
-  Widget build(BuildContext context) => const _SkeletonPage(
-        title: '跨链',
-        body: _CenteredMessage('铸造 / 赎回功能联调中'),
-      );
+  Widget build(BuildContext context) => const BridgePage();
 }
 
 /// 设置页路由包装。
 class _SettingsTabRouter extends StatelessWidget {
   const _SettingsTabRouter();
   @override
-  Widget build(BuildContext context) => const _SkeletonPage(
-        title: '设置',
-        body: _CenteredMessage('设置功能开发中'),
-      );
-}
-
-/// 统一骨架页（标题 + 内容）。
-class _SkeletonPage extends StatelessWidget {
-  final String title;
-  final Widget body;
-  const _SkeletonPage({required this.title, required this.body});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: SafeArea(child: body),
-    );
-  }
-}
-
-/// 居中信息展示。
-class _CenteredMessage extends StatelessWidget {
-  final String text;
-  const _CenteredMessage(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.construction, size: 48, color: Theme.of(context).colorScheme.outline),
-          const SizedBox(height: 12),
-          Text(text, style: Theme.of(context).textTheme.bodyLarge, textAlign: TextAlign.center),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const SettingsPage();
 }
