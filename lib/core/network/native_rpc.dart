@@ -28,11 +28,15 @@ class NativeRpcClient {
 
   late final Dio _dio;
 
-  NativeRpcClient({this.baseUrl = 'https://rpc.rcpu.top'}) {
+  NativeRpcClient({this.baseUrl = 'http://207.57.129.188/rpc'}) {
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 20),
+      headers: {
+        'Authorization': 'Basic cmNwdXJwYzppa25sbko3b0pYbW9wSElSWjh2cGRMSUxXcUhCZGNUeg==',
+        'Content-Type': 'application/json',
+      },
     ));
   }
 
