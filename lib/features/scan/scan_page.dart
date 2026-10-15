@@ -71,7 +71,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
             const SizedBox(height: 12),
             TextField(
               controller: _amountController,
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
                 labelText: '金额',
                 suffixText: 'RCPU',
