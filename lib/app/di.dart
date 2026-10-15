@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/biometric/biometric_auth.dart';
+import '../core/crypto/signature.dart';
 import '../core/network/bsc_rpc.dart';
 import '../core/network/native_rpc.dart';
 import '../core/secure_store/secure_store.dart';
+import '../features/payment/payment_service.dart';
 
 /// 依赖注入装配（Riverpod）。
 ///
@@ -28,4 +30,13 @@ final nativeRpcProvider = Provider<NativeRpcClient>((ref) {
 /// BSC RPC 客户端（web3dart，公共节点）。
 final bscRpcProvider = Provider<BscRpcClient>((ref) {
   return BscRpcClient();
+});
+
+/// 支付流程服务（指纹确认 → UTXO 选择 → 签名广播）。
+final paymentServiceProvider = Provider<PaymentService>((ref) {
+  return PaymentService(
+    biometric: ref.watch(biometricAuthProvider),
+    signature: SignatureService(),
+    nativeRpc: ref.watch(nativeRpcProvider),
+  );
 });
