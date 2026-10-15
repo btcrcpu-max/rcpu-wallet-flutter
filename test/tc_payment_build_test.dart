@@ -35,7 +35,13 @@ class _FakeBiometric implements BiometricAuth {
   Future<bool> hasEnrolledBiometrics() async => result;
 
   @override
-  Future<bool> isSupported() async => true;
+  Future<bool> isAvailable() async => true;
+
+  @override
+  Future<bool> isEnabled() async => false;
+
+  @override
+  Future<void> setEnabled(bool value) async {}
 }
 
 class _RecordingNativeRpc implements NativeRpcClient {
