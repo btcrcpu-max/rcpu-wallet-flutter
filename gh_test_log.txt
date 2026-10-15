@@ -1,0 +1,495 @@
+﻿2026-10-14T15:36:21.9115909Z Current runner version: '2.337.0'
+2026-10-14T15:36:21.9154910Z ##[group]Runner Image Provisioner
+2026-10-14T15:36:21.9156394Z Hosted Compute Agent
+2026-10-14T15:36:21.9157420Z Version: 20261002.596
+2026-10-14T15:36:21.9158694Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-14T15:36:21.9160015Z Build Date: 2026-10-02T22:28:27Z
+2026-10-14T15:36:21.9161226Z Worker ID: {54edd809-db48-4244-ac9c-c1a88b3a3e68}
+2026-10-14T15:36:21.9163208Z Region: westus
+2026-10-14T15:36:21.9164220Z Cloud: Azure
+2026-10-14T15:36:21.9165334Z ##[endgroup]
+2026-10-14T15:36:21.9168180Z ##[group]Operating System
+2026-10-14T15:36:21.9169336Z Ubuntu
+2026-10-14T15:36:21.9170364Z 24.04.5
+2026-10-14T15:36:21.9171307Z LTS
+2026-10-14T15:36:21.9172404Z ##[endgroup]
+2026-10-14T15:36:21.9173918Z ##[group]Runner Image
+2026-10-14T15:36:21.9175004Z Image: ubuntu-24.04
+2026-10-14T15:36:21.9176178Z Version: 20261004.327.1
+2026-10-14T15:36:21.9178528Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-14T15:36:21.9181528Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-14T15:36:21.9183779Z ##[endgroup]
+2026-10-14T15:36:21.9186198Z ##[group]GITHUB_TOKEN Permissions
+2026-10-14T15:36:21.9188947Z Contents: read
+2026-10-14T15:36:21.9190553Z Metadata: read
+2026-10-14T15:36:21.9191591Z Packages: read
+2026-10-14T15:36:21.9193123Z ##[endgroup]
+2026-10-14T15:36:21.9196264Z Secret source: Actions
+2026-10-14T15:36:21.9197811Z Cache mode: write
+2026-10-14T15:36:21.9199149Z Prepare workflow directory
+2026-10-14T15:36:21.9723995Z Prepare all required actions
+2026-10-14T15:36:21.9773142Z Getting action download info
+2026-10-14T15:36:22.3769907Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-14T15:36:22.5010979Z Download action repository 'subosito/flutter-action@v2' (SHA:1a449444c387b1966244ae4d4f8c696479add0b2)
+2026-10-14T15:36:22.8908940Z Getting action download info
+2026-10-14T15:36:23.0509369Z Download action repository 'actions/cache@v5' (SHA:caa296126883cff596d87d8935842f9db880ef25)
+2026-10-14T15:36:23.3166883Z Complete job name: Analyze & Test
+2026-10-14T15:36:23.4115412Z ##[group]Run actions/checkout@v4
+2026-10-14T15:36:23.4116905Z with:
+2026-10-14T15:36:23.4117991Z   repository: btcrcpu-max/rcpu-wallet-flutter
+2026-10-14T15:36:23.4127964Z   token: ***
+2026-10-14T15:36:23.4128895Z   ssh-strict: true
+2026-10-14T15:36:23.4129852Z   ssh-user: git
+2026-10-14T15:36:23.4130823Z   persist-credentials: true
+2026-10-14T15:36:23.4131931Z   clean: true
+2026-10-14T15:36:23.4133383Z   sparse-checkout-cone-mode: true
+2026-10-14T15:36:23.4134531Z   fetch-depth: 1
+2026-10-14T15:36:23.4135447Z   fetch-tags: false
+2026-10-14T15:36:23.4136384Z   show-progress: true
+2026-10-14T15:36:23.4137320Z   lfs: false
+2026-10-14T15:36:23.4138205Z   submodules: false
+2026-10-14T15:36:23.4139162Z   set-safe-directory: true
+2026-10-14T15:36:23.4140231Z   allow-unsafe-pr-checkout: false
+2026-10-14T15:36:23.4141699Z env:
+2026-10-14T15:36:23.4143160Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:36:23.4144247Z ##[endgroup]
+2026-10-14T15:36:23.5573888Z Syncing repository: btcrcpu-max/rcpu-wallet-flutter
+2026-10-14T15:36:23.5578563Z ##[group]Getting Git version info
+2026-10-14T15:36:23.5581327Z Working directory is '/home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter'
+2026-10-14T15:36:23.5585985Z [command]/usr/bin/git version
+2026-10-14T15:36:23.5589152Z git version 2.55.0
+2026-10-14T15:36:23.5610838Z ##[endgroup]
+2026-10-14T15:36:23.5622031Z Temporarily overriding HOME='/home/runner/work/_temp/8b0d4247-68c3-4289-beee-34dd34fce685' before making global git config changes
+2026-10-14T15:36:23.5627698Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-14T15:36:23.5633525Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter
+2026-10-14T15:36:23.5683607Z Deleting the contents of '/home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter'
+2026-10-14T15:36:23.5689000Z ##[group]Initializing the repository
+2026-10-14T15:36:23.5693175Z [command]/usr/bin/git init /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter
+2026-10-14T15:36:23.5845734Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-14T15:36:23.5877130Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-14T15:36:23.5881048Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-14T15:36:23.5885232Z hint: call:
+2026-10-14T15:36:23.5886983Z hint:
+2026-10-14T15:36:23.5890625Z hint: 	git config --global init.defaultBranch <name>
+2026-10-14T15:36:23.5897435Z hint:
+2026-10-14T15:36:23.5927773Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-14T15:36:23.5931420Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-14T15:36:23.5935175Z hint:
+2026-10-14T15:36:23.5954000Z hint: 	git branch -m <name>
+2026-10-14T15:36:23.5978814Z hint:
+2026-10-14T15:36:23.5981851Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-14T15:36:23.6019664Z Initialized empty Git repository in /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/.git/
+2026-10-14T15:36:23.6063793Z [command]/usr/bin/git remote add origin https://github.com/btcrcpu-max/rcpu-wallet-flutter
+2026-10-14T15:36:23.6069205Z ##[endgroup]
+2026-10-14T15:36:23.6071456Z ##[group]Disabling automatic garbage collection
+2026-10-14T15:36:23.6073711Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-14T15:36:23.6078380Z ##[endgroup]
+2026-10-14T15:36:23.6083673Z ##[group]Setting up auth
+2026-10-14T15:36:23.6101435Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-14T15:36:23.6118921Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-14T15:36:23.6801922Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-14T15:36:23.6824565Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-14T15:36:23.6980329Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-14T15:36:23.7036137Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-14T15:36:23.7280844Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-14T15:36:23.7329125Z ##[endgroup]
+2026-10-14T15:36:23.7333119Z ##[group]Fetching the repository
+2026-10-14T15:36:23.7344562Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +f5c79ae7659deb8f8cc87e5f2439465b1204986d:refs/remotes/origin/main
+2026-10-14T15:36:24.2095632Z From https://github.com/btcrcpu-max/rcpu-wallet-flutter
+2026-10-14T15:36:24.2124488Z  * [new ref]         f5c79ae7659deb8f8cc87e5f2439465b1204986d -> origin/main
+2026-10-14T15:36:24.2128965Z ##[endgroup]
+2026-10-14T15:36:24.2130707Z ##[group]Determining the checkout info
+2026-10-14T15:36:24.2132330Z ##[endgroup]
+2026-10-14T15:36:24.2134006Z [command]/usr/bin/git sparse-checkout disable
+2026-10-14T15:36:24.2137668Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-14T15:36:24.2141906Z ##[group]Checking out the ref
+2026-10-14T15:36:24.2143639Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-10-14T15:36:24.2210723Z Switched to a new branch 'main'
+2026-10-14T15:36:24.2219553Z branch 'main' set up to track 'origin/main'.
+2026-10-14T15:36:24.2228334Z ##[endgroup]
+2026-10-14T15:36:24.2289737Z [command]/usr/bin/git log -1 --format=%H
+2026-10-14T15:36:24.2322041Z f5c79ae7659deb8f8cc87e5f2439465b1204986d
+2026-10-14T15:36:24.2828153Z ##[group]Run subosito/flutter-action@v2
+2026-10-14T15:36:24.2828591Z with:
+2026-10-14T15:36:24.2828895Z   flutter-version: 3.47.7
+2026-10-14T15:36:24.2829232Z   channel: stable
+2026-10-14T15:36:24.2829532Z   cache: true
+2026-10-14T15:36:24.2829824Z   architecture: X64
+2026-10-14T15:36:24.2830143Z   pub-cache-path: default
+2026-10-14T15:36:24.2830475Z   dry-run: false
+2026-10-14T15:36:24.2830854Z   git-source: https://github.com/flutter/flutter.git
+2026-10-14T15:36:24.2831295Z env:
+2026-10-14T15:36:24.2831577Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:36:24.2831901Z ##[endgroup]
+2026-10-14T15:36:24.2895232Z ##[start-action display=Make yq tool available on Windows runners;id=__subosito_flutter-action.__run]
+2026-10-14T15:36:24.2920419Z ##[end-action id=__subosito_flutter-action.__run;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-10-14T15:36:24.2923359Z ##[start-action display=Make setup script executable;id=__subosito_flutter-action.__run_2]
+2026-10-14T15:36:24.2964274Z ##[group]Run chmod +x "$GITHUB_ACTION_PATH/setup.sh"
+2026-10-14T15:36:24.2964838Z [36;1mchmod +x "$GITHUB_ACTION_PATH/setup.sh"[0m
+2026-10-14T15:36:24.3318638Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-14T15:36:24.3319462Z env:
+2026-10-14T15:36:24.3319959Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:36:24.3320535Z ##[endgroup]
+2026-10-14T15:36:24.3590991Z ##[end-action id=__subosito_flutter-action.__run_2;outcome=success;conclusion=success;duration_ms=66]
+2026-10-14T15:36:24.3596356Z ##[start-action display=Set action inputs;id=__subosito_flutter-action.flutter-action]
+2026-10-14T15:36:24.3662013Z ##[group]Run $GITHUB_ACTION_PATH/setup.sh -p \
+2026-10-14T15:36:24.3663127Z [36;1m$GITHUB_ACTION_PATH/setup.sh -p \[0m
+2026-10-14T15:36:24.3663797Z [36;1m  -n '3.47.7' \[0m
+2026-10-14T15:36:24.3664317Z [36;1m  -f '' \[0m
+2026-10-14T15:36:24.3664799Z [36;1m  -a 'X64' \[0m
+2026-10-14T15:36:24.3665284Z [36;1m  -k '' \[0m
+2026-10-14T15:36:24.3665760Z [36;1m  -c '' \[0m
+2026-10-14T15:36:24.3666266Z [36;1m  -l '' \[0m
+2026-10-14T15:36:24.3666747Z [36;1m  -d 'default' \[0m
+2026-10-14T15:36:24.3667390Z [36;1m  -g 'https://github.com/flutter/flutter.git' \[0m
+2026-10-14T15:36:24.3668066Z [36;1m  stable[0m
+2026-10-14T15:36:24.3763184Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-14T15:36:24.3764048Z env:
+2026-10-14T15:36:24.3764532Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:36:24.3765098Z ##[endgroup]
+2026-10-14T15:36:24.5827683Z ##[end-action id=__subosito_flutter-action.flutter-action;outcome=success;conclusion=success;duration_ms=222]
+2026-10-14T15:36:24.5834120Z ##[start-action display=Cache Flutter;id=__subosito_flutter-action.cache-flutter]
+2026-10-14T15:36:24.5903710Z ##[group]Run actions/cache@v5
+2026-10-14T15:36:24.5904159Z with:
+2026-10-14T15:36:24.5904547Z   path: /opt/hostedtoolcache/flutter/stable-3.47.7-x64
+2026-10-14T15:36:24.5905237Z   key: flutter-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8
+2026-10-14T15:36:24.5905915Z   enableCrossOsArchive: false
+2026-10-14T15:36:24.5906310Z   fail-on-cache-miss: false
+2026-10-14T15:36:24.5906679Z   lookup-only: false
+2026-10-14T15:36:24.5907014Z   save-always: false
+2026-10-14T15:36:24.5907356Z env:
+2026-10-14T15:36:24.5907656Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:36:24.5908008Z ##[endgroup]
+2026-10-14T15:36:25.0674419Z Cache hit for: flutter-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8
+2026-10-14T15:36:26.3549499Z Received 0 of 1722056244 (0.0%), 0.0 MBs/sec
+2026-10-14T15:36:27.3584805Z Received 92274688 of 1722056244 (5.4%), 44.0 MBs/sec
+2026-10-14T15:36:28.3614033Z Received 209715200 of 1722056244 (12.2%), 66.6 MBs/sec
+2026-10-14T15:36:29.3594732Z Received 322961408 of 1722056244 (18.8%), 76.9 MBs/sec
+2026-10-14T15:36:30.3595918Z Received 402653184 of 1722056244 (23.4%), 76.7 MBs/sec
+2026-10-14T15:36:31.3679594Z Received 520093696 of 1722056244 (30.2%), 82.6 MBs/sec
+2026-10-14T15:36:32.3601788Z Received 595591168 of 1722056244 (34.6%), 81.1 MBs/sec
+2026-10-14T15:36:33.3599267Z Received 671088640 of 1722056244 (39.0%), 79.9 MBs/sec
+2026-10-14T15:36:34.3603845Z Received 788529152 of 1722056244 (45.8%), 83.5 MBs/sec
+2026-10-14T15:36:35.3601760Z Received 859832320 of 1722056244 (49.9%), 82.0 MBs/sec
+2026-10-14T15:36:36.3610563Z Received 939524096 of 1722056244 (54.6%), 81.4 MBs/sec
+2026-10-14T15:36:37.3654088Z Received 1044381696 of 1722056244 (60.6%), 83.0 MBs/sec
+2026-10-14T15:36:38.3623846Z Received 1103101952 of 1722056244 (64.1%), 80.9 MBs/sec
+2026-10-14T15:36:39.3623036Z Received 1203765248 of 1722056244 (69.9%), 82.0 MBs/sec
+2026-10-14T15:36:40.3629721Z Received 1212153856 of 1722056244 (70.4%), 77.0 MBs/sec
+2026-10-14T15:36:41.3638124Z Received 1317011456 of 1722056244 (76.5%), 78.5 MBs/sec
+2026-10-14T15:36:42.3640032Z Received 1337982976 of 1722056244 (77.7%), 75.0 MBs/sec
+2026-10-14T15:36:43.3754312Z Received 1417674752 of 1722056244 (82.3%), 75.0 MBs/sec
+2026-10-14T15:36:44.3696625Z Received 1509949440 of 1722056244 (87.7%), 75.7 MBs/sec
+2026-10-14T15:36:45.3698357Z Received 1606418432 of 1722056244 (93.3%), 76.5 MBs/sec
+2026-10-14T15:36:46.3715189Z Received 1644167168 of 1722056244 (95.5%), 74.6 MBs/sec
+2026-10-14T15:36:47.0478379Z Received 1722056244 of 1722056244 (100.0%), 75.7 MBs/sec
+2026-10-14T15:36:47.0483824Z Cache Size: ~1642 MB (1722056244 B)
+2026-10-14T15:36:47.0533042Z [command]/usr/bin/tar -xf /home/runner/work/_temp/7ffd0cfe-39c3-4df4-bc1d-0d6904085954/cache.tzst -P -C /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter --use-compress-program unzstd
+2026-10-14T15:36:58.2828600Z Cache restored successfully
+2026-10-14T15:36:59.2498337Z Cache restored from key: flutter-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8
+2026-10-14T15:36:59.2649698Z ##[end-action id=__subosito_flutter-action.cache-flutter;outcome=success;conclusion=success;duration_ms=34681]
+2026-10-14T15:36:59.2653476Z ##[start-action display=Cache pub dependencies;id=__subosito_flutter-action.cache-pub]
+2026-10-14T15:36:59.9084294Z ##[group]Run actions/cache@v5
+2026-10-14T15:36:59.9084747Z with:
+2026-10-14T15:36:59.9085086Z   path: /home/runner/.pub-cache
+2026-10-14T15:36:59.9086166Z   key: flutter-pub-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8-9eac4bbf3ed4639e144b3ca212e099a19ebc5db73542d4a1040e7df0e31f9883
+2026-10-14T15:36:59.9087286Z   enableCrossOsArchive: false
+2026-10-14T15:36:59.9087658Z   fail-on-cache-miss: false
+2026-10-14T15:36:59.9088011Z   lookup-only: false
+2026-10-14T15:36:59.9088328Z   save-always: false
+2026-10-14T15:36:59.9088649Z env:
+2026-10-14T15:36:59.9088920Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:36:59.9089239Z ##[endgroup]
+2026-10-14T15:37:00.3457186Z Cache hit for: flutter-pub-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8-9eac4bbf3ed4639e144b3ca212e099a19ebc5db73542d4a1040e7df0e31f9883
+2026-10-14T15:37:01.6461889Z Received 0 of 41526342 (0.0%), 0.0 MBs/sec
+2026-10-14T15:37:02.0548667Z Received 41526342 of 41526342 (100.0%), 28.1 MBs/sec
+2026-10-14T15:37:02.0549845Z Cache Size: ~40 MB (41526342 B)
+2026-10-14T15:37:02.0662163Z [command]/usr/bin/tar -xf /home/runner/work/_temp/10bdd687-93b6-402c-aac3-2cd850c5ae67/cache.tzst -P -C /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter --use-compress-program unzstd
+2026-10-14T15:37:03.5773923Z Cache restored successfully
+2026-10-14T15:37:03.5883411Z Cache restored from key: flutter-pub-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8-9eac4bbf3ed4639e144b3ca212e099a19ebc5db73542d4a1040e7df0e31f9883
+2026-10-14T15:37:03.5988472Z ##[end-action id=__subosito_flutter-action.cache-pub;outcome=success;conclusion=success;duration_ms=4333]
+2026-10-14T15:37:03.5994264Z ##[start-action display=Run setup script;id=__subosito_flutter-action.__run_3]
+2026-10-14T15:37:03.6429017Z ##[group]Run $GITHUB_ACTION_PATH/setup.sh \
+2026-10-14T15:37:03.6429595Z [36;1m$GITHUB_ACTION_PATH/setup.sh \[0m
+2026-10-14T15:37:03.6430100Z [36;1m  -n '3.47.7' \[0m
+2026-10-14T15:37:03.6430492Z [36;1m  -a 'x64' \[0m
+2026-10-14T15:37:03.6431321Z [36;1m  -c '/opt/hostedtoolcache/flutter/stable-3.47.7-x64' \[0m
+2026-10-14T15:37:03.6432223Z [36;1m  -d '/home/runner/.pub-cache' \[0m
+2026-10-14T15:37:03.6432977Z [36;1m  stable[0m
+2026-10-14T15:37:03.7396329Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-14T15:37:03.7396896Z env:
+2026-10-14T15:37:03.7397229Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:37:03.7397601Z ##[endgroup]
+2026-10-14T15:37:04.0327678Z ##[end-action id=__subosito_flutter-action.__run_3;outcome=success;conclusion=success;duration_ms=433]
+2026-10-14T15:37:04.0397260Z ##[group]Run flutter pub get
+2026-10-14T15:37:04.0397650Z [36;1mflutter pub get[0m
+2026-10-14T15:37:04.0464718Z shell: /usr/bin/bash -e {0}
+2026-10-14T15:37:04.0465120Z env:
+2026-10-14T15:37:04.0465443Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:37:04.0466023Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.47.7-x64/flutter
+2026-10-14T15:37:04.0466672Z   PUB_CACHE: /home/runner/.pub-cache
+2026-10-14T15:37:04.0467108Z ##[endgroup]
+2026-10-14T15:37:04.5719666Z Resolving dependencies...
+2026-10-14T15:37:04.6758669Z Downloading packages...
+2026-10-14T15:37:04.7428701Z   code_assets 1.2.1 (2.1.0 available)
+2026-10-14T15:37:04.7429544Z   eip55 1.0.2 (1.0.3 available)
+2026-10-14T15:37:04.7430427Z   flutter_lints 4.0.0 (6.0.0 available)
+2026-10-14T15:37:04.7431493Z   flutter_riverpod 2.6.1 (3.4.3 available)
+2026-10-14T15:37:04.7432414Z   flutter_secure_storage 9.2.4 (11.2.0 available)
+2026-10-14T15:37:04.7433606Z   flutter_secure_storage_linux 1.2.3 (3.0.3 available)
+2026-10-14T15:37:04.7434633Z   flutter_secure_storage_macos 3.1.3 (4.0.0 available)
+2026-10-14T15:37:04.7435641Z   flutter_secure_storage_platform_interface 1.1.2 (2.1.1 available)
+2026-10-14T15:37:04.7436684Z   flutter_secure_storage_web 1.2.1 (2.1.1 available)
+2026-10-14T15:37:04.7437595Z   flutter_secure_storage_windows 3.1.2 (4.2.2 available)
+2026-10-14T15:37:04.7438499Z   go_router 14.8.1 (18.0.2 available)
+2026-10-14T15:37:04.7439310Z   hooks 2.0.2 (2.2.0 available)
+2026-10-14T15:37:04.7440176Z   js 0.6.7 (0.7.2 available)
+2026-10-14T15:37:04.7441021Z   json_rpc_2 3.0.3 (4.1.0 available)
+2026-10-14T15:37:04.7463310Z   lints 4.0.0 (6.1.0 available)
+2026-10-14T15:37:04.7464064Z   local_auth 2.3.0 (3.0.2 available)
+2026-10-14T15:37:04.7465418Z   local_auth_android 1.0.56 (2.3.0 available)
+2026-10-14T15:37:04.7466308Z   local_auth_darwin 1.6.1 (2.0.4 available)
+2026-10-14T15:37:04.7467080Z   local_auth_windows 1.0.11 (2.0.2 available)
+2026-10-14T15:37:04.7467901Z   material_color_utilities 0.13.0 (0.13.1 available)
+2026-10-14T15:37:04.7468698Z   meta 1.18.3 (1.19.0 available)
+2026-10-14T15:37:04.7469389Z   mobile_scanner 5.2.3 (7.4.2 available)
+2026-10-14T15:37:04.7470112Z   objective_c 9.5.0 (9.6.2 available)
+2026-10-14T15:37:04.7470845Z   pointycastle 3.9.1 (4.0.0 available)
+2026-10-14T15:37:04.7471560Z   qr 3.0.2 (4.0.0 available)
+2026-10-14T15:37:04.7472219Z   record_use 0.6.0 (1.1.1 available)
+2026-10-14T15:37:04.7473168Z   riverpod 2.6.1 (3.4.3 available)
+2026-10-14T15:37:04.7473885Z   sec 1.1.0 (1.1.1 available)
+2026-10-14T15:37:04.7474561Z   test_api 0.7.12 (0.7.15 available)
+2026-10-14T15:37:04.7475292Z   vector_math 2.4.0 (2.4.3 available)
+2026-10-14T15:37:04.7475981Z   wallet 0.0.13 (0.0.18 available)
+2026-10-14T15:37:04.7476628Z   web3dart 2.7.3 (3.0.3 available)
+2026-10-14T15:37:04.7477256Z   win32 5.15.0 (6.4.0 available)
+2026-10-14T15:37:04.7477891Z Got dependencies!
+2026-10-14T15:37:04.7478712Z 33 packages have newer versions incompatible with dependency constraints.
+2026-10-14T15:37:04.7479687Z Try `flutter pub outdated` for more information.
+2026-10-14T15:37:05.0374789Z ##[group]Run flutter analyze
+2026-10-14T15:37:05.0375214Z [36;1mflutter analyze[0m
+2026-10-14T15:37:05.0440094Z shell: /usr/bin/bash -e {0}
+2026-10-14T15:37:05.0440500Z env:
+2026-10-14T15:37:05.0440819Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:37:05.0441384Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.47.7-x64/flutter
+2026-10-14T15:37:05.0442051Z   PUB_CACHE: /home/runner/.pub-cache
+2026-10-14T15:37:05.0442482Z ##[endgroup]
+2026-10-14T15:37:05.2615344Z Resolving dependencies...
+2026-10-14T15:37:05.3811892Z Downloading packages...
+2026-10-14T15:37:05.4593530Z   code_assets 1.2.1 (2.1.0 available)
+2026-10-14T15:37:05.4613765Z   eip55 1.0.2 (1.0.3 available)
+2026-10-14T15:37:05.4643843Z   flutter_lints 4.0.0 (6.0.0 available)
+2026-10-14T15:37:05.4644592Z   flutter_riverpod 2.6.1 (3.4.3 available)
+2026-10-14T15:37:05.4645243Z   flutter_secure_storage 9.2.4 (11.2.0 available)
+2026-10-14T15:37:05.4645892Z   flutter_secure_storage_linux 1.2.3 (3.0.3 available)
+2026-10-14T15:37:05.4646653Z   flutter_secure_storage_macos 3.1.3 (4.0.0 available)
+2026-10-14T15:37:05.4647396Z   flutter_secure_storage_platform_interface 1.1.2 (2.1.1 available)
+2026-10-14T15:37:05.4648161Z   flutter_secure_storage_web 1.2.1 (2.1.1 available)
+2026-10-14T15:37:05.4648824Z   flutter_secure_storage_windows 3.1.2 (4.2.2 available)
+2026-10-14T15:37:05.4649476Z   go_router 14.8.1 (18.0.2 available)
+2026-10-14T15:37:05.4650071Z   hooks 2.0.2 (2.2.0 available)
+2026-10-14T15:37:05.4650706Z   js 0.6.7 (0.7.2 available)
+2026-10-14T15:37:05.4651305Z   json_rpc_2 3.0.3 (4.1.0 available)
+2026-10-14T15:37:05.4654654Z   lints 4.0.0 (6.1.0 available)
+2026-10-14T15:37:05.4655077Z   local_auth 2.3.0 (3.0.2 available)
+2026-10-14T15:37:05.4655623Z   local_auth_android 1.0.56 (2.3.0 available)
+2026-10-14T15:37:05.4656156Z   local_auth_darwin 1.6.1 (2.0.4 available)
+2026-10-14T15:37:05.4656688Z   local_auth_windows 1.0.11 (2.0.2 available)
+2026-10-14T15:37:05.4657222Z   material_color_utilities 0.13.0 (0.13.1 available)
+2026-10-14T15:37:05.4657811Z   meta 1.18.3 (1.19.0 available)
+2026-10-14T15:37:05.4658348Z   mobile_scanner 5.2.3 (7.4.2 available)
+2026-10-14T15:37:05.4658905Z   objective_c 9.5.0 (9.6.2 available)
+2026-10-14T15:37:05.4659476Z   pointycastle 3.9.1 (4.0.0 available)
+2026-10-14T15:37:05.4659995Z   qr 3.0.2 (4.0.0 available)
+2026-10-14T15:37:05.4660460Z   record_use 0.6.0 (1.1.1 available)
+2026-10-14T15:37:05.4660967Z   riverpod 2.6.1 (3.4.3 available)
+2026-10-14T15:37:05.4661478Z   sec 1.1.0 (1.1.1 available)
+2026-10-14T15:37:05.4661882Z   test_api 0.7.12 (0.7.15 available)
+2026-10-14T15:37:05.4662347Z   vector_math 2.4.0 (2.4.3 available)
+2026-10-14T15:37:05.4663014Z   wallet 0.0.13 (0.0.18 available)
+2026-10-14T15:37:05.4663484Z   web3dart 2.7.3 (3.0.3 available)
+2026-10-14T15:37:05.4664581Z   win32 5.15.0 (6.4.0 available)
+2026-10-14T15:37:05.4665035Z Got dependencies!
+2026-10-14T15:37:05.4665638Z 33 packages have newer versions incompatible with dependency constraints.
+2026-10-14T15:37:05.4666475Z Try `flutter pub outdated` for more information.
+2026-10-14T15:37:17.3391107Z Analyzing rcpu-wallet-flutter...                                
+2026-10-14T15:37:17.3423338Z No issues found! (ran in 11.1s)
+2026-10-14T15:37:17.3585466Z ##[group]Run flutter test
+2026-10-14T15:37:17.3586085Z [36;1mflutter test[0m
+2026-10-14T15:37:17.3684527Z shell: /usr/bin/bash -e {0}
+2026-10-14T15:37:17.3684961Z env:
+2026-10-14T15:37:17.3685306Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:37:17.3685984Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.47.7-x64/flutter
+2026-10-14T15:37:17.3686677Z   PUB_CACHE: /home/runner/.pub-cache
+2026-10-14T15:37:17.3687138Z ##[endgroup]
+2026-10-14T15:37:17.5853938Z Resolving dependencies...
+2026-10-14T15:37:17.6900897Z Downloading packages...
+2026-10-14T15:37:17.7574085Z   code_assets 1.2.1 (2.1.0 available)
+2026-10-14T15:37:17.7574760Z   eip55 1.0.2 (1.0.3 available)
+2026-10-14T15:37:17.7575353Z   flutter_lints 4.0.0 (6.0.0 available)
+2026-10-14T15:37:17.7575989Z   flutter_riverpod 2.6.1 (3.4.3 available)
+2026-10-14T15:37:17.7576603Z   flutter_secure_storage 9.2.4 (11.2.0 available)
+2026-10-14T15:37:17.7577429Z   flutter_secure_storage_linux 1.2.3 (3.0.3 available)
+2026-10-14T15:37:17.7593948Z   flutter_secure_storage_macos 3.1.3 (4.0.0 available)
+2026-10-14T15:37:17.7595048Z   flutter_secure_storage_platform_interface 1.1.2 (2.1.1 available)
+2026-10-14T15:37:17.7596179Z   flutter_secure_storage_web 1.2.1 (2.1.1 available)
+2026-10-14T15:37:17.7597241Z   flutter_secure_storage_windows 3.1.2 (4.2.2 available)
+2026-10-14T15:37:17.7598546Z   go_router 14.8.1 (18.0.2 available)
+2026-10-14T15:37:17.7599326Z   hooks 2.0.2 (2.2.0 available)
+2026-10-14T15:37:17.7600016Z   js 0.6.7 (0.7.2 available)
+2026-10-14T15:37:17.7600760Z   json_rpc_2 3.0.3 (4.1.0 available)
+2026-10-14T15:37:17.7601517Z   lints 4.0.0 (6.1.0 available)
+2026-10-14T15:37:17.7602233Z   local_auth 2.3.0 (3.0.2 available)
+2026-10-14T15:37:17.7603235Z   local_auth_android 1.0.56 (2.3.0 available)
+2026-10-14T15:37:17.7604040Z   local_auth_darwin 1.6.1 (2.0.4 available)
+2026-10-14T15:37:17.7604838Z   local_auth_windows 1.0.11 (2.0.2 available)
+2026-10-14T15:37:17.7605669Z   material_color_utilities 0.13.0 (0.13.1 available)
+2026-10-14T15:37:17.7606578Z   meta 1.18.3 (1.19.0 available)
+2026-10-14T15:37:17.7607275Z   mobile_scanner 5.2.3 (7.4.2 available)
+2026-10-14T15:37:17.7608018Z   objective_c 9.5.0 (9.6.2 available)
+2026-10-14T15:37:17.7608765Z   pointycastle 3.9.1 (4.0.0 available)
+2026-10-14T15:37:17.7609494Z   qr 3.0.2 (4.0.0 available)
+2026-10-14T15:37:17.7610157Z   record_use 0.6.0 (1.1.1 available)
+2026-10-14T15:37:17.7610861Z   riverpod 2.6.1 (3.4.3 available)
+2026-10-14T15:37:17.7611547Z   sec 1.1.0 (1.1.1 available)
+2026-10-14T15:37:17.7612205Z   test_api 0.7.12 (0.7.15 available)
+2026-10-14T15:37:17.7613110Z   vector_math 2.4.0 (2.4.3 available)
+2026-10-14T15:37:17.7613823Z   wallet 0.0.13 (0.0.18 available)
+2026-10-14T15:37:17.7614470Z   web3dart 2.7.3 (3.0.3 available)
+2026-10-14T15:37:17.7615115Z   win32 5.15.0 (6.4.0 available)
+2026-10-14T15:37:17.7615707Z Got dependencies!
+2026-10-14T15:37:17.7616424Z 33 packages have newer versions incompatible with dependency constraints.
+2026-10-14T15:37:17.7617569Z Try `flutter pub outdated` for more information.
+2026-10-14T15:37:19.9754558Z 
+2026-10-14T15:37:32.5478396Z ##[group]✅ Passing tests
+2026-10-14T15:37:32.5488815Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_payment_build_test.dart: TC-PAY-01 明文收款交易构造闭环 单输入：输出金额 / 找零 / fee / P2WPKH 脚本 / witness 64B
+2026-10-14T15:37:32.6082386Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_payment_build_test.dart: TC-PAY-01 明文收款交易构造闭环 升序最小足够集合：不暴露全部余额（多输入按需凑足）
+2026-10-14T15:37:32.6158364Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_payment_build_test.dart: TC-PAY-01 明文收款交易构造闭环 余额不足 → 明确失败（不广播）
+2026-10-14T15:37:32.6197456Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_payment_build_test.dart: TC-PAY-01 明文收款交易构造闭环 隐私收款 → 降级提示（fail-closed，不静默降明文）
+2026-10-14T15:37:32.6264367Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_payment_build_test.dart: TC-PAY-01 明文收款交易构造闭环 无 P2TR 可签名输入（仅明文 P2WPKH 锁定）→ 明确失败
+2026-10-14T15:37:32.6295534Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_payment_build_test.dart: TC-PAY-01 明文收款交易构造闭环 锁定后未确认输出不可花费（confirmed=false 被过滤）
+2026-10-14T15:37:32.7066619Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_payment_build_test.dart: TC-PAY-02 get_utxos 请求形态 method=get_utxos / id=5 / params=[address] / 解析金额与脚本
+2026-10-14T15:37:34.4779287Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_crypto_test.dart: TC-DRV-03 派生确定性 同一助记词三次派生明文地址完全一致
+2026-10-14T15:37:34.9725803Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_crypto_test.dart: TC-DRV-03 派生确定性 同一助记词三次派生 BSC 地址完全一致
+2026-10-14T15:37:35.1795348Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_crypto_test.dart: TC-DRV-04 助记词校验 合法 12 词助记词通过校验并可派生
+2026-10-14T15:37:35.1857801Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_crypto_test.dart: TC-DRV-04 助记词校验 错词助记词拒绝（isValid false 且派生抛 FormatException）
+2026-10-14T15:37:35.4865910Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_crypto_test.dart: TC-DRV-01/02 地址结构（定版依赖 C1/C2） 明文地址：rcpu1 前缀 + plain 类型
+2026-10-14T15:37:35.7849521Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_crypto_test.dart: TC-DRV-01/02 地址结构（定版依赖 C1/C2） 隐私地址：rcpux1 前缀 + private 类型
+2026-10-14T15:37:36.1350482Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_crypto_test.dart: TC-DRV-01/02 地址结构（定版依赖 C1/C2） 明文与隐私地址互不相同
+2026-10-14T15:37:36.5341432Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_crypto_test.dart: TC-SIG-01 BSC 签名校验（verifyBscSignature 已落地） 正确签名：恢复地址 == 派生 BSC 地址
+2026-10-14T15:37:36.9965688Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_crypto_test.dart: TC-SIG-01 BSC 签名校验（verifyBscSignature 已落地） 篡改消息：校验失败
+2026-10-14T15:37:37.6373324Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_crypto_test.dart: TC-SIG-01 BSC 签名校验（verifyBscSignature 已落地） 错误地址：校验失败（大小写不敏感）
+2026-10-14T15:37:38.0682473Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_crypto_test.dart: TC-SIG-01 BSC 签名校验（verifyBscSignature 已落地） 签名长度非法（非 65 字节）：直接返回 false
+2026-10-14T15:37:38.7008214Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_drv_encoding_test.dart: Bech32 编解码（BIP173 官方向量） BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4 解码结构正确
+2026-10-14T15:37:38.7059668Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_drv_encoding_test.dart: Bech32 编解码（BIP173 官方向量） bech32 往返：encode 后可 decode 还原
+2026-10-14T15:37:38.7086965Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_drv_encoding_test.dart: Bech32 编解码（BIP173 官方向量） bech32m 往返：encode 后可 decode 还原
+2026-10-14T15:37:38.7139181Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_drv_encoding_test.dart: Bech32 编解码（BIP173 官方向量） bech32 与 bech32m 不可混用（交叉解码抛 FormatException）
+2026-10-14T15:37:38.7166252Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_drv_encoding_test.dart: Bech32 编解码（BIP173 官方向量） 非法输入拒绝：缺分隔符 / 非法字符
+2026-10-14T15:37:39.2782798Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_drv_encoding_test.dart: Path C 地址编码（C2 已解锁） 隐私地址 rcpux1 为 bech32m，payload 54B 结构正确
+2026-10-14T15:37:39.5908757Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_drv_encoding_test.dart: Path C 地址编码（C2 已解锁） 明文地址 rcpu1 为 bech32，payload 21B 结构正确
+2026-10-14T15:37:40.0644888Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_drv_encoding_test.dart: NativeKeyBundle 派生 同一助记词派生原语确定性一致，keyid 自洽
+2026-10-14T15:37:40.3364617Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_drv_encoding_test.dart: NativeKeyBundle 派生 明文与隐私密钥组互不相同
+2026-10-14T15:37:41.4140655Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bridge_test.dart: TC-MINT-01 最小存款校验 0.009 RCPU 拒绝且不广播
+2026-10-14T15:37:41.4184829Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bridge_test.dart: TC-MINT-01 最小存款校验 0.01 RCPU 恰好通过校验（等于最小门槛）
+2026-10-14T15:37:41.4223403Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bridge_test.dart: TC-MINT-02 地址强制明文 rcpux1 隐私地址被拒绝
+2026-10-14T15:37:41.4259595Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bridge_test.dart: TC-MINT-04 铸造门槛与轮询退避 按地址累计满 10 RCPU 才铸造（常量校验）
+2026-10-14T15:37:41.4286377Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bridge_test.dart: TC-MINT-04 铸造门槛与轮询退避 轮询 3 次，指数退避 10s -> 20s -> 40s
+2026-10-14T15:37:41.4309402Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bridge_test.dart: TC-MINT-04 铸造门槛与轮询退避 轮询 3 次仍未 minted 时返回最后状态（状态机常量）
+2026-10-14T15:37:41.4366750Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bridge_test.dart: TC-REDEEM-01 BNB Gas 检查门槛 Gas 阈值常量为 0.01 BNB（1e16 wei）
+2026-10-14T15:37:41.4404380Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bridge_test.dart: TC-REDEEM-02 收款地址强制明文 赎回收款地址为 rcpux1 被拒绝
+2026-10-14T15:37:41.4445064Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bridge_test.dart: TC-REDEEM-02 收款地址强制明文 赎回金额低于最小存款被拒绝
+2026-10-14T15:37:41.4494815Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bridge_test.dart: TC-FB-03 网络异常（超时约定） 原生 RPC 客户端超时约定：连接 10s / 接收 20s
+2026-10-14T15:37:41.4520033Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bridge_test.dart: TC-FB-03 网络异常（超时约定） 桥/代理错误码映射（草案约定）
+2026-10-14T15:37:42.1759852Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig04_sign_native_test.dart: TC-SIG-04 signNative 闭环 签名→序列化→独立解析→验签通过
+2026-10-14T15:37:42.2615561Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig04_sign_native_test.dart: TC-SIG-04 signNative 闭环 金额篡改 → 验签失败（sighash 绑定 prevout amount）
+2026-10-14T15:37:42.2869395Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig04_sign_native_test.dart: TC-SIG-04 signNative 闭环 缺失 prevOuts → 给出明确错误指引
+2026-10-14T15:37:42.3330452Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig04_sign_native_test.dart: TC-SIG-04 signNative 闭环 prevOuts 数量不匹配 → 抛 ArgumentError
+2026-10-14T15:37:42.3540814Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig04_sign_native_test.dart: TC-SIG-04 signNative 闭环 非 P2TR prevout 脚本 → 抛格式错误
+2026-10-14T15:37:42.4015296Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig04_sign_native_test.dart: TC-SIG-04b Signature 字节级入口 signNative(sighash, priv) 产出可验签签名
+2026-10-14T15:37:42.9202423Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig02_hkdf_test.dart: TC-SIG-02 Path C HKDF/ECDH（官方 Appendix A/C 向量） DeriveViewSeed matches official vector
+2026-10-14T15:37:42.9239509Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig02_hkdf_test.dart: TC-SIG-02 Path C HKDF/ECDH（官方 Appendix A/C 向量） DerivePathCNonce matches official vector
+2026-10-14T15:37:42.9277578Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig02_hkdf_test.dart: TC-SIG-02 Path C HKDF/ECDH（官方 Appendix A/C 向量） DeriveRewindNonceFromViewSeed matches sender nonce
+2026-10-14T15:37:42.9339765Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig02_hkdf_test.dart: TC-SIG-02 Path C HKDF/ECDH（官方 Appendix A/C 向量） Different scriptPubKey yields different nonce
+2026-10-14T15:37:43.7736886Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_ct_resolve_test.dart: 请求形态：method=resolve_ct，params 为对象（txHex/viewSeed/ownScriptPubKey）
+2026-10-14T15:37:43.7913327Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_ct_resolve_test.dart: 成功响应：金额为十进制整数 micro，verified=true
+2026-10-14T15:37:43.8056221Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_ct_resolve_test.dart: 非本人输出：amountMicro=null 且 verified=false，不抛异常
+2026-10-14T15:37:43.8310223Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_ct_resolve_test.dart: 代理错误 -32002（viewing key 错误）→ RpcException
+2026-10-14T15:37:43.8512473Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_ct_resolve_test.dart: 代理错误 -32001（链不可达）→ RpcException
+2026-10-14T15:37:43.8634183Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_ct_resolve_test.dart: CtResolver 转发链路：本人输出返回金额（micro）
+2026-10-14T15:37:43.8743646Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_ct_resolve_test.dart: CtResolver 转发链路：非本人输出返回 null
+2026-10-14T15:37:44.3850626Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig03_test.dart: TC-SIG-03 降级路径 隐私地址 + 指纹成功 → 降级提示
+2026-10-14T15:37:44.3883689Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_sig03_test.dart: TC-SIG-03 降级路径 指纹取消 → 直接失败
+2026-10-14T15:37:45.0152420Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bip340_test.dart: BIP340 官方向量（BIP-0340 test-vectors） 向量 #0：sign 输出与官方一致且 verify 通过
+2026-10-14T15:37:45.0685904Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bip340_test.dart: BIP340 官方向量（BIP-0340 test-vectors） 向量 #1：sign 输出与官方一致且 verify 通过
+2026-10-14T15:37:45.1008368Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bip340_test.dart: BIP340 官方向量（BIP-0340 test-vectors） 向量 #2（verify=false 锚点）：篡改消息 → false
+2026-10-14T15:37:45.1395560Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bip340_test.dart: BIP340 边界与容错 篡改签名单字节 → verify false
+2026-10-14T15:37:45.1426572Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bip340_test.dart: BIP340 边界与容错 签名长度非法 → verify false
+2026-10-14T15:37:45.1747021Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bip340_test.dart: BIP340 边界与容错 公钥不是曲线点（x 越界）→ verify false
+2026-10-14T15:37:45.1797373Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bip340_test.dart: BIP340 边界与容错 私钥越界（0 / n）→ sign 抛 ArgumentError
+2026-10-14T15:37:45.1835798Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_bip340_test.dart: BIP340 边界与容错 x-only 与压缩公钥互转
+2026-10-14T15:37:45.9139035Z ##[endgroup]
+2026-10-14T15:37:45.9140652Z ##[group]⏭️ Skipped tests
+2026-10-14T15:37:45.9143437Z ⏭️ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_blocked_test.dart: 🔴 依赖 C1/C2（Path C 协议文档） TC-DRV-01 明文地址与官方钱包一致 (skipped)
+2026-10-14T15:37:45.9145390Z Skip: 依赖 C2：_protocolEncode 伪编码待定版
+2026-10-14T15:37:45.9147258Z ⏭️ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_blocked_test.dart: 🔴 依赖 C1/C2（Path C 协议文档） TC-DRV-02 隐私地址与官方钱包一致 (skipped)
+2026-10-14T15:37:45.9149249Z Skip: 依赖 C1/C2：nativePrivatePath 为占位 m/44'/307'/0'/1/0
+2026-10-14T15:37:45.9151205Z ⏭️ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_blocked_test.dart: 🔴 依赖 C1/C2（Path C 协议文档） TC-DRV-05 spending/viewing 双钥派生 (skipped)
+2026-10-14T15:37:45.9153329Z Skip: 依赖 C1/C2：key bundle 结构待协议定
+2026-10-14T15:37:45.9155075Z ⏭️ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_blocked_test.dart: 🔴 依赖 C3/C4（代理契约） TC-CT-IN-01 CT 收款到账（代理 unblind） (skipped)
+2026-10-14T15:37:45.9156753Z Skip: 依赖 C3/C4：代理须完成 ECDH + 解承诺 + range proof
+2026-10-14T15:37:45.9165615Z ⏭️ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_blocked_test.dart: 🔴 依赖 C3/C4（代理契约） TC-CT-OUT-02 隐私付款签名广播 (skipped)
+2026-10-14T15:37:45.9167245Z Skip: 依赖 C1/C4：signNative 占位 + 广播链路未通
+2026-10-14T15:37:45.9169045Z ⏭️ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_blocked_test.dart: 🔴 依赖 C3/C4（代理契约） TC-MINT-03 桥 API 专属存款地址获取 (skipped)
+2026-10-14T15:37:45.9171153Z Skip: 依赖 C3/C4：桥 API 契约待定（API 优先，WebView 降级已就绪）
+2026-10-14T15:37:45.9173296Z ⏭️ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_blocked_test.dart: 🔴 依赖 C3/C4（代理契约） TC-MINT-04 累计满 10 铸造真实到账 (skipped)
+2026-10-14T15:37:45.9174893Z Skip: 依赖 C4：真实铸造需桥处理
+2026-10-14T15:37:45.9176293Z ⏭️ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_blocked_test.dart: 🔴 依赖 C3/C4（代理契约） TC-REDEEM-03 赎回广播（burn + 指定收款） (skipped)
+2026-10-14T15:37:45.9177705Z Skip: 依赖 C1/C4：redeem 契约待桥确认
+2026-10-14T15:37:45.9179320Z ⏭️ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_blocked_test.dart: 🔴 依赖 C3/C4（代理契约） TC-REDEEM-04 赎回后原生余额自动刷新 (skipped)
+2026-10-14T15:37:45.9180773Z Skip: 依赖 C3/C4：代理余额缓存 + 桥回调/轮询
+2026-10-14T15:37:45.9182186Z ⏭️ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_blocked_test.dart: 🔴 依赖支付流程实现 TC-SIG-03 指纹确认后触发签名 (skipped)
+2026-10-14T15:37:45.9193679Z Skip: payment 流程待实现：授权 true 进入签名、false 中止且不产生签名对象
+2026-10-14T15:37:46.4650113Z ##[endgroup]
+2026-10-14T15:37:46.4651692Z ##[group]✅ Passing tests
+2026-10-14T15:37:46.4653475Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-IN-03 收款二维码生成 rcpux1 隐私收款码：rcpu:rcpux1...?amount=1.5
+2026-10-14T15:37:46.4675027Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-IN-03 收款二维码生成 rcpu1 明文收款码：可省略金额
+2026-10-14T15:37:46.4711693Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-IN-03 收款二维码生成 带 memo 时按 URL 编码
+2026-10-14T15:37:46.4754343Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-OUT-01 扫码解析与资产预判 rcpux1 地址预判为隐私 native 付款，金额 1.5
+2026-10-14T15:37:46.4782363Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-OUT-01 扫码解析与资产预判 rcpu1 地址预判为明文 native 付款，金额 0.8
+2026-10-14T15:37:46.4803038Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-OUT-01 扫码解析与资产预判 0x 地址预判为 wRCPU（BSC）
+2026-10-14T15:37:46.4828680Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-OUT-01 扫码解析与资产预判 原生地址显式 asset=native 通过校验
+2026-10-14T15:37:46.4869147Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-OUT-01 扫码解析与资产预判 wrcpu 付款地址必须 0x 开头
+2026-10-14T15:37:46.4894367Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-OUT-01 扫码解析与资产预判 非 rcpu: 协议一律拒绝（防误触网页）
+2026-10-14T15:37:46.4936808Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-OUT-04 金额校验（拒绝非法金额，不进入签名流程） 金额为 0 拒绝
+2026-10-14T15:37:46.4972033Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-OUT-04 金额校验（拒绝非法金额，不进入签名流程） 金额格式非法（负数）拒绝
+2026-10-14T15:37:46.4994416Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-OUT-04 金额校验（拒绝非法金额，不进入签名流程） 金额精度超 8 位拒绝
+2026-10-14T15:37:46.5024430Z ✅ /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter/test/tc_qr_payment_test.dart: TC-CT-OUT-04 金额校验（拒绝非法金额，不进入签名流程） 正确金额可换算为 micro 整数
+2026-10-14T15:37:46.5181002Z ##[endgroup]
+2026-10-14T15:37:46.5181966Z 
+2026-10-14T15:37:46.5185749Z 🎉 78 tests passed, 10 skipped.
+2026-10-14T15:37:46.6100026Z Post job cleanup.
+2026-10-14T15:37:46.6104435Z ##[start-action display=Cache pub dependencies;id=__e6ef0940-34dd-423a-b840-abbb4cbfb3f4.cache-pub]
+2026-10-14T15:37:46.7122045Z Post job cleanup.
+2026-10-14T15:37:46.8831947Z Cache hit occurred on the primary key flutter-pub-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8-9eac4bbf3ed4639e144b3ca212e099a19ebc5db73542d4a1040e7df0e31f9883, not saving cache.
+2026-10-14T15:37:46.8924248Z ##[end-action id=__e6ef0940-34dd-423a-b840-abbb4cbfb3f4.cache-pub;outcome=success;conclusion=success;duration_ms=281]
+2026-10-14T15:37:46.8929562Z ##[start-action display=Cache Flutter;id=__e6ef0940-34dd-423a-b840-abbb4cbfb3f4.cache-flutter]
+2026-10-14T15:37:46.9000403Z Post job cleanup.
+2026-10-14T15:37:47.0496230Z Cache hit occurred on the primary key flutter-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8, not saving cache.
+2026-10-14T15:37:47.0569337Z ##[end-action id=__e6ef0940-34dd-423a-b840-abbb4cbfb3f4.cache-flutter;outcome=success;conclusion=success;duration_ms=163]
+2026-10-14T15:37:47.0678477Z Post job cleanup.
+2026-10-14T15:37:47.1803461Z [command]/usr/bin/git version
+2026-10-14T15:37:47.1863381Z git version 2.55.0
+2026-10-14T15:37:47.1934229Z Temporarily overriding HOME='/home/runner/work/_temp/ac71b2b7-a437-40c4-a5db-9eb237389a46' before making global git config changes
+2026-10-14T15:37:47.1942364Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-14T15:37:47.1960334Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/rcpu-wallet-flutter/rcpu-wallet-flutter
+2026-10-14T15:37:47.2043481Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-14T15:37:47.2138001Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-14T15:37:47.2710457Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-14T15:37:47.2791309Z http.https://github.com/.extraheader
+2026-10-14T15:37:47.2863343Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-14T15:37:47.2954847Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-14T15:37:47.3453565Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-14T15:37:47.3513745Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-14T15:37:47.3982448Z Cleaning up orphan processes
+2026-10-14T15:37:47.4278439Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

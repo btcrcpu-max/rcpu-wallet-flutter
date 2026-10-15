@@ -1,0 +1,460 @@
+﻿2026-10-14T15:32:40.3251197Z Current runner version: '2.337.0'
+2026-10-14T15:32:40.3275502Z ##[group]Runner Image Provisioner
+2026-10-14T15:32:40.3276645Z Hosted Compute Agent
+2026-10-14T15:32:40.3277671Z Version: 20261002.596
+2026-10-14T15:32:40.3278366Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-14T15:32:40.3279144Z Build Date: 2026-10-02T22:28:27Z
+2026-10-14T15:32:40.3279958Z Worker ID: {46cfb1f2-de6b-4eb0-82c4-9131f303c703}
+2026-10-14T15:32:40.3280714Z Region: westus2
+2026-10-14T15:32:40.3281412Z Cloud: Azure
+2026-10-14T15:32:40.3281980Z ##[endgroup]
+2026-10-14T15:32:40.3283623Z ##[group]Operating System
+2026-10-14T15:32:40.3284431Z Ubuntu
+2026-10-14T15:32:40.3285018Z 24.04.5
+2026-10-14T15:32:40.3285600Z LTS
+2026-10-14T15:32:40.3286136Z ##[endgroup]
+2026-10-14T15:32:40.3287019Z ##[group]Runner Image
+2026-10-14T15:32:40.3287661Z Image: ubuntu-24.04
+2026-10-14T15:32:40.3288291Z Version: 20261004.327.1
+2026-10-14T15:32:40.3289750Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-14T15:32:40.3291474Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-14T15:32:40.3292546Z ##[endgroup]
+2026-10-14T15:32:40.3293856Z ##[group]GITHUB_TOKEN Permissions
+2026-10-14T15:32:40.3296027Z Contents: read
+2026-10-14T15:32:40.3297040Z Metadata: read
+2026-10-14T15:32:40.3297875Z Packages: read
+2026-10-14T15:32:40.3298506Z ##[endgroup]
+2026-10-14T15:32:40.3300674Z Secret source: Actions
+2026-10-14T15:32:40.3301656Z Cache mode: write
+2026-10-14T15:32:40.3302465Z Prepare workflow directory
+2026-10-14T15:32:40.3886997Z Prepare all required actions
+2026-10-14T15:32:40.3934075Z Getting action download info
+2026-10-14T15:32:40.7308602Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-14T15:32:40.8607132Z Download action repository 'subosito/flutter-action@v2' (SHA:1a449444c387b1966244ae4d4f8c696479add0b2)
+2026-10-14T15:32:41.0463283Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-14T15:32:41.2676009Z Getting action download info
+2026-10-14T15:32:41.4058963Z Download action repository 'actions/cache@v5' (SHA:caa296126883cff596d87d8935842f9db880ef25)
+2026-10-14T15:32:41.6668662Z Complete job name: Build APK (signed when secrets present)
+2026-10-14T15:32:41.7595803Z ##[group]Run actions/checkout@v4
+2026-10-14T15:32:41.7597552Z with:
+2026-10-14T15:32:41.7598680Z   repository: btc***-max/***-wallet-flutter
+2026-10-14T15:32:41.7607897Z   token: ***
+2026-10-14T15:32:41.7608877Z   ssh-strict: true
+2026-10-14T15:32:41.7609828Z   ssh-user: git
+2026-10-14T15:32:41.7610806Z   persist-credentials: true
+2026-10-14T15:32:41.7611875Z   clean: true
+2026-10-14T15:32:41.7612843Z   sparse-checkout-cone-mode: true
+2026-10-14T15:32:41.7613979Z   fetch-depth: 1
+2026-10-14T15:32:41.7614935Z   fetch-tags: false
+2026-10-14T15:32:41.7615919Z   show-progress: true
+2026-10-14T15:32:41.7617097Z   lfs: false
+2026-10-14T15:32:41.7618027Z   submodules: false
+2026-10-14T15:32:41.7619056Z   set-safe-directory: true
+2026-10-14T15:32:41.7620176Z   allow-unsafe-pr-checkout: false
+2026-10-14T15:32:41.7621632Z env:
+2026-10-14T15:32:41.7622548Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:32:41.7670385Z   ANDROID_KEYSTORE_B64: ***
+2026-10-14T15:32:41.7671565Z   KEYSTORE_PASSWORD: ***
+2026-10-14T15:32:41.7672698Z   KEY_PASSWORD: ***
+2026-10-14T15:32:41.7673688Z   KEY_ALIAS: ***
+2026-10-14T15:32:41.7674619Z ##[endgroup]
+2026-10-14T15:32:41.8985516Z Syncing repository: btc***-max/***-wallet-flutter
+2026-10-14T15:32:41.8992036Z ##[group]Getting Git version info
+2026-10-14T15:32:41.8997862Z Working directory is '/home/runner/work/***-wallet-flutter/***-wallet-flutter'
+2026-10-14T15:32:41.9001735Z [command]/usr/bin/git version
+2026-10-14T15:32:41.9115285Z git version 2.55.0
+2026-10-14T15:32:41.9211407Z ##[endgroup]
+2026-10-14T15:32:41.9270212Z Temporarily overriding HOME='/home/runner/work/_temp/2af6d0ee-d9eb-42aa-ba50-7e7a8c2f5bf8' before making global git config changes
+2026-10-14T15:32:41.9276015Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-14T15:32:41.9281904Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/***-wallet-flutter/***-wallet-flutter
+2026-10-14T15:32:41.9291395Z Deleting the contents of '/home/runner/work/***-wallet-flutter/***-wallet-flutter'
+2026-10-14T15:32:41.9295635Z ##[group]Initializing the repository
+2026-10-14T15:32:41.9298883Z [command]/usr/bin/git init /home/runner/work/***-wallet-flutter/***-wallet-flutter
+2026-10-14T15:32:41.9468699Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-14T15:32:41.9472366Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-14T15:32:41.9489708Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-14T15:32:41.9492791Z hint: call:
+2026-10-14T15:32:41.9495207Z hint:
+2026-10-14T15:32:41.9498356Z hint: 	git config --global init.defaultBranch <name>
+2026-10-14T15:32:41.9501238Z hint:
+2026-10-14T15:32:41.9506797Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-14T15:32:41.9510688Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-14T15:32:41.9514115Z hint:
+2026-10-14T15:32:41.9515981Z hint: 	git branch -m <name>
+2026-10-14T15:32:41.9518699Z hint:
+2026-10-14T15:32:41.9521737Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-14T15:32:41.9527538Z Initialized empty Git repository in /home/runner/work/***-wallet-flutter/***-wallet-flutter/.git/
+2026-10-14T15:32:41.9537170Z [command]/usr/bin/git remote add origin https://github.com/btc***-max/***-wallet-flutter
+2026-10-14T15:32:41.9543308Z ##[endgroup]
+2026-10-14T15:32:41.9546030Z ##[group]Disabling automatic garbage collection
+2026-10-14T15:32:41.9557148Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-14T15:32:41.9592866Z ##[endgroup]
+2026-10-14T15:32:41.9597180Z ##[group]Setting up auth
+2026-10-14T15:32:41.9601561Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-14T15:32:41.9683417Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-14T15:32:42.0279104Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-14T15:32:42.0291055Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-14T15:32:42.0550376Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-14T15:32:42.0565362Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-14T15:32:42.0816244Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-14T15:32:42.0862967Z ##[endgroup]
+2026-10-14T15:32:42.0866896Z ##[group]Fetching the repository
+2026-10-14T15:32:42.0877681Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +f5c79ae7659deb8f8cc87e5f2439465b1204986d:refs/remotes/origin/main
+2026-10-14T15:32:42.4254337Z From https://github.com/btc***-max/***-wallet-flutter
+2026-10-14T15:32:42.4385588Z  * [new ref]         f5c79ae7659deb8f8cc87e5f2439465b1204986d -> origin/main
+2026-10-14T15:32:42.4390242Z ##[endgroup]
+2026-10-14T15:32:42.4391750Z ##[group]Determining the checkout info
+2026-10-14T15:32:42.4393028Z ##[endgroup]
+2026-10-14T15:32:42.4394152Z [command]/usr/bin/git sparse-checkout disable
+2026-10-14T15:32:42.4397409Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-14T15:32:42.4401514Z ##[group]Checking out the ref
+2026-10-14T15:32:42.4402907Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-10-14T15:32:42.4513690Z Switched to a new branch 'main'
+2026-10-14T15:32:42.4522457Z branch 'main' set up to track 'origin/main'.
+2026-10-14T15:32:42.4527662Z ##[endgroup]
+2026-10-14T15:32:42.4574053Z [command]/usr/bin/git log -1 --format=%H
+2026-10-14T15:32:42.4602992Z f5c79ae7659deb8f8cc87e5f2439465b1204986d
+2026-10-14T15:32:42.4994366Z ##[group]Run subosito/flutter-action@v2
+2026-10-14T15:32:42.4994767Z with:
+2026-10-14T15:32:42.4995030Z   flutter-version: 3.47.7
+2026-10-14T15:32:42.4995326Z   channel: stable
+2026-10-14T15:32:42.4995587Z   cache: true
+2026-10-14T15:32:42.4995854Z   architecture: X64
+2026-10-14T15:32:42.4996143Z   pub-cache-path: default
+2026-10-14T15:32:42.4996667Z   dry-run: false
+2026-10-14T15:32:42.4997056Z   git-source: https://github.com/flutter/flutter.git
+2026-10-14T15:32:42.4997437Z env:
+2026-10-14T15:32:42.4997684Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:32:42.5011349Z   ANDROID_KEYSTORE_B64: ***
+2026-10-14T15:32:42.5011761Z   KEYSTORE_PASSWORD: ***
+2026-10-14T15:32:42.5012112Z   KEY_PASSWORD: ***
+2026-10-14T15:32:42.5012400Z   KEY_ALIAS: ***
+2026-10-14T15:32:42.5012672Z ##[endgroup]
+2026-10-14T15:32:42.5080442Z ##[start-action display=Make yq tool available on Windows runners;id=__subosito_flutter-action.__run]
+2026-10-14T15:32:42.5116985Z ##[end-action id=__subosito_flutter-action.__run;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-10-14T15:32:42.5121185Z ##[start-action display=Make setup script executable;id=__subosito_flutter-action.__run_2]
+2026-10-14T15:32:42.5180881Z ##[group]Run chmod +x "$GITHUB_ACTION_PATH/setup.sh"
+2026-10-14T15:32:42.5181667Z [36;1mchmod +x "$GITHUB_ACTION_PATH/setup.sh"[0m
+2026-10-14T15:32:42.5561268Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-14T15:32:42.5562037Z env:
+2026-10-14T15:32:42.5562497Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:32:42.5589173Z   ANDROID_KEYSTORE_B64: ***
+2026-10-14T15:32:42.5589914Z   KEYSTORE_PASSWORD: ***
+2026-10-14T15:32:42.5590583Z   KEY_PASSWORD: ***
+2026-10-14T15:32:42.5591102Z   KEY_ALIAS: ***
+2026-10-14T15:32:42.5591566Z ##[endgroup]
+2026-10-14T15:32:42.5799716Z ##[end-action id=__subosito_flutter-action.__run_2;outcome=success;conclusion=success;duration_ms=67]
+2026-10-14T15:32:42.5804389Z ##[start-action display=Set action inputs;id=__subosito_flutter-action.flutter-action]
+2026-10-14T15:32:42.5867457Z ##[group]Run $GITHUB_ACTION_PATH/setup.sh -p \
+2026-10-14T15:32:42.5868273Z [36;1m$GITHUB_ACTION_PATH/setup.sh -p \[0m
+2026-10-14T15:32:42.5868901Z [36;1m  -n '3.47.7' \[0m
+2026-10-14T15:32:42.5869475Z [36;1m  -f '' \[0m
+2026-10-14T15:32:42.5869963Z [36;1m  -a 'X64' \[0m
+2026-10-14T15:32:42.5870251Z [36;1m  -k '' \[0m
+2026-10-14T15:32:42.5870517Z [36;1m  -c '' \[0m
+2026-10-14T15:32:42.5870781Z [36;1m  -l '' \[0m
+2026-10-14T15:32:42.5871050Z [36;1m  -d 'default' \[0m
+2026-10-14T15:32:42.5871458Z [36;1m  -g 'https://github.com/flutter/flutter.git' \[0m
+2026-10-14T15:32:42.5871878Z [36;1m  stable[0m
+2026-10-14T15:32:42.5937479Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-14T15:32:42.5937892Z env:
+2026-10-14T15:32:42.5938155Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:32:42.5952191Z   ANDROID_KEYSTORE_B64: ***
+2026-10-14T15:32:42.5952573Z   KEYSTORE_PASSWORD: ***
+2026-10-14T15:32:42.5952892Z   KEY_PASSWORD: ***
+2026-10-14T15:32:42.5953173Z   KEY_ALIAS: ***
+2026-10-14T15:32:42.5953449Z ##[endgroup]
+2026-10-14T15:32:42.8096080Z ##[end-action id=__subosito_flutter-action.flutter-action;outcome=success;conclusion=success;duration_ms=228]
+2026-10-14T15:32:42.8104380Z ##[start-action display=Cache Flutter;id=__subosito_flutter-action.cache-flutter]
+2026-10-14T15:32:42.8185912Z ##[group]Run actions/cache@v5
+2026-10-14T15:32:42.8186243Z with:
+2026-10-14T15:32:42.8186987Z   path: /opt/hostedtoolcache/flutter/stable-3.47.7-x64
+2026-10-14T15:32:42.8187545Z   key: flutter-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8
+2026-10-14T15:32:42.8188051Z   enableCrossOsArchive: false
+2026-10-14T15:32:42.8188585Z   fail-on-cache-miss: false
+2026-10-14T15:32:42.8188881Z   lookup-only: false
+2026-10-14T15:32:42.8189156Z   save-always: false
+2026-10-14T15:32:42.8189416Z env:
+2026-10-14T15:32:42.8189661Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:32:42.8203071Z   ANDROID_KEYSTORE_B64: ***
+2026-10-14T15:32:42.8203444Z   KEYSTORE_PASSWORD: ***
+2026-10-14T15:32:42.8203960Z   KEY_PASSWORD: ***
+2026-10-14T15:32:42.8204267Z   KEY_ALIAS: ***
+2026-10-14T15:32:42.8204532Z ##[endgroup]
+2026-10-14T15:32:43.2509642Z Cache hit for: flutter-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8
+2026-10-14T15:32:44.5257389Z Received 0 of 1722056244 (0.0%), 0.0 MBs/sec
+2026-10-14T15:32:45.5307703Z Received 125829120 of 1722056244 (7.3%), 59.9 MBs/sec
+2026-10-14T15:32:46.5307341Z Received 213909504 of 1722056244 (12.4%), 67.9 MBs/sec
+2026-10-14T15:32:47.5299009Z Received 264241152 of 1722056244 (15.3%), 62.9 MBs/sec
+2026-10-14T15:32:48.5413863Z Received 394264576 of 1722056244 (22.9%), 75.1 MBs/sec
+2026-10-14T15:32:49.5354039Z Received 469762048 of 1722056244 (27.3%), 74.5 MBs/sec
+2026-10-14T15:32:50.5447932Z Received 536870912 of 1722056244 (31.2%), 72.9 MBs/sec
+2026-10-14T15:32:51.5507630Z Received 645922816 of 1722056244 (37.5%), 76.8 MBs/sec
+2026-10-14T15:32:52.5482831Z Received 696254464 of 1722056244 (40.4%), 73.6 MBs/sec
+2026-10-14T15:32:53.5500099Z Received 801112064 of 1722056244 (46.5%), 76.2 MBs/sec
+2026-10-14T15:32:54.5567951Z Received 872415232 of 1722056244 (50.7%), 75.4 MBs/sec
+2026-10-14T15:32:55.5561581Z Received 952107008 of 1722056244 (55.3%), 75.5 MBs/sec
+2026-10-14T15:32:56.5570418Z Received 1065353216 of 1722056244 (61.9%), 78.0 MBs/sec
+2026-10-14T15:32:57.5572251Z Received 1145044992 of 1722056244 (66.5%), 77.8 MBs/sec
+2026-10-14T15:32:58.5587940Z Received 1237319680 of 1722056244 (71.9%), 78.5 MBs/sec
+2026-10-14T15:32:59.5583417Z Received 1337982976 of 1722056244 (77.7%), 79.6 MBs/sec
+2026-10-14T15:33:00.5590714Z Received 1438646272 of 1722056244 (83.5%), 80.5 MBs/sec
+2026-10-14T15:33:01.5600824Z Received 1514143744 of 1722056244 (87.9%), 80.1 MBs/sec
+2026-10-14T15:33:02.5603249Z Received 1606418432 of 1722056244 (93.3%), 80.5 MBs/sec
+2026-10-14T15:33:03.5605805Z Received 1665138688 of 1722056244 (96.7%), 79.3 MBs/sec
+2026-10-14T15:33:04.3327666Z Received 1722056244 of 1722056244 (100.0%), 78.9 MBs/sec
+2026-10-14T15:33:04.3330125Z Cache Size: ~1642 MB (1722056244 B)
+2026-10-14T15:33:04.3522207Z [command]/usr/bin/tar -xf /home/runner/work/_temp/b7923315-a841-42c8-bb1b-97913f35d13a/cache.tzst -P -C /home/runner/work/***-wallet-flutter/***-wallet-flutter --use-compress-program unzstd
+2026-10-14T15:33:15.1751794Z Cache restored successfully
+2026-10-14T15:33:16.1577002Z Cache restored from key: flutter-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8
+2026-10-14T15:33:16.1712103Z ##[end-action id=__subosito_flutter-action.cache-flutter;outcome=success;conclusion=success;duration_ms=33360]
+2026-10-14T15:33:16.1715529Z ##[start-action display=Cache pub dependencies;id=__subosito_flutter-action.cache-pub]
+2026-10-14T15:33:16.3644223Z ##[group]Run actions/cache@v5
+2026-10-14T15:33:16.3644507Z with:
+2026-10-14T15:33:16.3644766Z   path: /home/runner/.pub-cache
+2026-10-14T15:33:16.3645530Z   key: flutter-pub-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8-9eac4bbf3ed4639e144b3ca212e099a19ebc5db73542d4a1040e7df0e31f9883
+2026-10-14T15:33:16.3646645Z   enableCrossOsArchive: false
+2026-10-14T15:33:16.3647012Z   fail-on-cache-miss: false
+2026-10-14T15:33:16.3647270Z   lookup-only: false
+2026-10-14T15:33:16.3647498Z   save-always: false
+2026-10-14T15:33:16.3647731Z env:
+2026-10-14T15:33:16.3647934Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:33:16.3661174Z   ANDROID_KEYSTORE_B64: ***
+2026-10-14T15:33:16.3661507Z   KEYSTORE_PASSWORD: ***
+2026-10-14T15:33:16.3661779Z   KEY_PASSWORD: ***
+2026-10-14T15:33:16.3662005Z   KEY_ALIAS: ***
+2026-10-14T15:33:16.3662220Z ##[endgroup]
+2026-10-14T15:33:17.3824877Z Cache hit for: flutter-pub-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8-9eac4bbf3ed4639e144b3ca212e099a19ebc5db73542d4a1040e7df0e31f9883
+2026-10-14T15:33:18.6645494Z Received 0 of 41526342 (0.0%), 0.0 MBs/sec
+2026-10-14T15:33:19.1469334Z Received 41526342 of 41526342 (100.0%), 26.7 MBs/sec
+2026-10-14T15:33:19.1470329Z Cache Size: ~40 MB (41526342 B)
+2026-10-14T15:33:19.1506882Z [command]/usr/bin/tar -xf /home/runner/work/_temp/5c0e15bb-f673-41cb-bc2f-027241a7fd17/cache.tzst -P -C /home/runner/work/***-wallet-flutter/***-wallet-flutter --use-compress-program unzstd
+2026-10-14T15:33:20.2680142Z Cache restored successfully
+2026-10-14T15:33:20.2778758Z Cache restored from key: flutter-pub-linux-stable-3.47.7-x64-abaf9c523780a608bd46686fd5e53740a07077f8-9eac4bbf3ed4639e144b3ca212e099a19ebc5db73542d4a1040e7df0e31f9883
+2026-10-14T15:33:20.2870711Z ##[end-action id=__subosito_flutter-action.cache-pub;outcome=success;conclusion=success;duration_ms=4115]
+2026-10-14T15:33:20.2874976Z ##[start-action display=Run setup script;id=__subosito_flutter-action.__run_3]
+2026-10-14T15:33:20.2915324Z ##[group]Run $GITHUB_ACTION_PATH/setup.sh \
+2026-10-14T15:33:20.2915732Z [36;1m$GITHUB_ACTION_PATH/setup.sh \[0m
+2026-10-14T15:33:20.2916036Z [36;1m  -n '3.47.7' \[0m
+2026-10-14T15:33:20.2916588Z [36;1m  -a 'x64' \[0m
+2026-10-14T15:33:20.2916997Z [36;1m  -c '/opt/hostedtoolcache/flutter/stable-3.47.7-x64' \[0m
+2026-10-14T15:33:20.2917403Z [36;1m  -d '/home/runner/.pub-cache' \[0m
+2026-10-14T15:33:20.2917709Z [36;1m  stable[0m
+2026-10-14T15:33:20.3009120Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-14T15:33:20.3009526Z env:
+2026-10-14T15:33:20.3009764Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:33:20.3024563Z   ANDROID_KEYSTORE_B64: ***
+2026-10-14T15:33:20.3024891Z   KEYSTORE_PASSWORD: ***
+2026-10-14T15:33:20.3025192Z   KEY_PASSWORD: ***
+2026-10-14T15:33:20.3025440Z   KEY_ALIAS: ***
+2026-10-14T15:33:20.3025656Z ##[endgroup]
+2026-10-14T15:33:20.5260960Z ##[end-action id=__subosito_flutter-action.__run_3;outcome=success;conclusion=success;duration_ms=238]
+2026-10-14T15:33:20.5321143Z ##[group]Run flutter pub get
+2026-10-14T15:33:20.5321498Z [36;1mflutter pub get[0m
+2026-10-14T15:33:20.5387697Z shell: /usr/bin/bash -e {0}
+2026-10-14T15:33:20.5388027Z env:
+2026-10-14T15:33:20.5388282Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:33:20.5404549Z   ANDROID_KEYSTORE_B64: ***
+2026-10-14T15:33:20.5404908Z   KEYSTORE_PASSWORD: ***
+2026-10-14T15:33:20.5405210Z   KEY_PASSWORD: ***
+2026-10-14T15:33:20.5405451Z   KEY_ALIAS: ***
+2026-10-14T15:33:20.5405790Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.47.7-x64/flutter
+2026-10-14T15:33:20.5406215Z   PUB_CACHE: /home/runner/.pub-cache
+2026-10-14T15:33:20.5406773Z ##[endgroup]
+2026-10-14T15:33:20.9777279Z Resolving dependencies...
+2026-10-14T15:33:21.0755159Z Downloading packages...
+2026-10-14T15:33:21.1657918Z   code_assets 1.2.1 (2.1.0 available)
+2026-10-14T15:33:21.1658753Z   eip55 1.0.2 (1.0.3 available)
+2026-10-14T15:33:21.1659305Z   flutter_lints 4.0.0 (6.0.0 available)
+2026-10-14T15:33:21.1667215Z   flutter_riverpod 2.6.1 (3.4.3 available)
+2026-10-14T15:33:21.1668968Z   flutter_secure_storage 9.2.4 (11.2.0 available)
+2026-10-14T15:33:21.1669922Z   flutter_secure_storage_linux 1.2.3 (3.0.3 available)
+2026-10-14T15:33:21.1672550Z   flutter_secure_storage_macos 3.1.3 (4.0.0 available)
+2026-10-14T15:33:21.1673344Z   flutter_secure_storage_platform_interface 1.1.2 (2.1.1 available)
+2026-10-14T15:33:21.1674089Z   flutter_secure_storage_web 1.2.1 (2.1.1 available)
+2026-10-14T15:33:21.1674725Z   flutter_secure_storage_windows 3.1.2 (4.2.2 available)
+2026-10-14T15:33:21.1675366Z   go_router 14.8.1 (18.0.2 available)
+2026-10-14T15:33:21.1675897Z   hooks 2.0.2 (2.2.0 available)
+2026-10-14T15:33:21.1676593Z   js 0.6.7 (0.7.2 available)
+2026-10-14T15:33:21.1677075Z   json_rpc_2 3.0.3 (4.1.0 available)
+2026-10-14T15:33:21.1677557Z   lints 4.0.0 (6.1.0 available)
+2026-10-14T15:33:21.1678009Z   local_auth 2.3.0 (3.0.2 available)
+2026-10-14T15:33:21.1678510Z   local_auth_android 1.0.56 (2.3.0 available)
+2026-10-14T15:33:21.1679085Z   local_auth_darwin 1.6.1 (2.0.4 available)
+2026-10-14T15:33:21.1679940Z   local_auth_windows 1.0.11 (2.0.2 available)
+2026-10-14T15:33:21.1680568Z   material_color_utilities 0.13.0 (0.13.1 available)
+2026-10-14T15:33:21.1681150Z   meta 1.18.3 (1.19.0 available)
+2026-10-14T15:33:21.1681628Z   mobile_scanner 5.2.3 (7.4.2 available)
+2026-10-14T15:33:21.1682166Z   objective_c 9.5.0 (9.6.2 available)
+2026-10-14T15:33:21.1682695Z   pointycastle 3.9.1 (4.0.0 available)
+2026-10-14T15:33:21.1683200Z   qr 3.0.2 (4.0.0 available)
+2026-10-14T15:33:21.1683665Z   record_use 0.6.0 (1.1.1 available)
+2026-10-14T15:33:21.1684139Z   riverpod 2.6.1 (3.4.3 available)
+2026-10-14T15:33:21.1684620Z   sec 1.1.0 (1.1.1 available)
+2026-10-14T15:33:21.1685087Z   test_api 0.7.12 (0.7.15 available)
+2026-10-14T15:33:21.1685588Z   vector_math 2.4.0 (2.4.3 available)
+2026-10-14T15:33:21.1686093Z   wallet 0.0.13 (0.0.18 available)
+2026-10-14T15:33:21.1686801Z   web3dart 2.7.3 (3.0.3 available)
+2026-10-14T15:33:21.1687321Z   win32 5.15.0 (6.4.0 available)
+2026-10-14T15:33:21.1687819Z Got dependencies!
+2026-10-14T15:33:21.1688448Z 33 packages have newer versions incompatible with dependency constraints.
+2026-10-14T15:33:21.1689272Z Try `flutter pub outdated` for more information.
+2026-10-14T15:33:21.4330119Z ##[group]Run if [ -n "$ANDROID_KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_PASSWORD" ]; then
+2026-10-14T15:33:21.4331416Z [36;1mif [ -n "$ANDROID_KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_PASSWORD" ]; then[0m
+2026-10-14T15:33:21.4332287Z [36;1m  echo "signing=enabled"[0m
+2026-10-14T15:33:21.4332838Z [36;1m  echo "signing=enabled" >> "$GITHUB_OUTPUT"[0m
+2026-10-14T15:33:21.4333389Z [36;1melse[0m
+2026-10-14T15:33:21.4333778Z [36;1m  echo "signing=missing"[0m
+2026-10-14T15:33:21.4334619Z [36;1m  echo "WARN: ANDROID_KEYSTORE_B64 / KEYSTORE_PASSWORD / KEY_PASSWORD 未配置，将构建 debug APK。"[0m
+2026-10-14T15:33:21.4335542Z [36;1m  echo "signing=missing" >> "$GITHUB_OUTPUT"[0m
+2026-10-14T15:33:21.4336096Z [36;1mfi[0m
+2026-10-14T15:33:21.4409997Z shell: /usr/bin/bash -e {0}
+2026-10-14T15:33:21.4410270Z env:
+2026-10-14T15:33:21.4410486Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:33:21.4423525Z   ANDROID_KEYSTORE_B64: ***
+2026-10-14T15:33:21.4423922Z   KEYSTORE_PASSWORD: ***
+2026-10-14T15:33:21.4424217Z   KEY_PASSWORD: ***
+2026-10-14T15:33:21.4424456Z   KEY_ALIAS: ***
+2026-10-14T15:33:21.4424792Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.47.7-x64/flutter
+2026-10-14T15:33:21.4425201Z   PUB_CACHE: /home/runner/.pub-cache
+2026-10-14T15:33:21.4425479Z ##[endgroup]
+2026-10-14T15:33:21.4510749Z signing=enabled
+2026-10-14T15:33:21.4542872Z ##[group]Run echo "$ANDROID_KEYSTORE_B64" | base64 -d > android/***-release.jks
+2026-10-14T15:33:21.4543506Z [36;1mecho "$ANDROID_KEYSTORE_B64" | base64 -d > android/***-release.jks[0m
+2026-10-14T15:33:21.4543937Z [36;1mcat > android/key.properties <<EOF[0m
+2026-10-14T15:33:21.4544264Z [36;1mstorePassword=$KEYSTORE_PASSWORD[0m
+2026-10-14T15:33:21.4544591Z [36;1mkeyPassword=$KEY_PASSWORD[0m
+2026-10-14T15:33:21.4544910Z [36;1mkeyAlias=${KEY_ALIAS:-***}[0m
+2026-10-14T15:33:21.4545219Z [36;1mstoreFile=***-release.jks[0m
+2026-10-14T15:33:21.4545489Z [36;1mEOF[0m
+2026-10-14T15:33:21.4545803Z [36;1m# 防泄露：key.properties 不入库（.gitignore 已含），此处仅校验可写[0m
+2026-10-14T15:33:21.4546616Z [36;1mtest -f android/key.properties && test -s android/***-release.jks[0m
+2026-10-14T15:33:21.4605564Z shell: /usr/bin/bash -e {0}
+2026-10-14T15:33:21.4605839Z env:
+2026-10-14T15:33:21.4606050Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:33:21.4619905Z   ANDROID_KEYSTORE_B64: ***
+2026-10-14T15:33:21.4620274Z   KEYSTORE_PASSWORD: ***
+2026-10-14T15:33:21.4620574Z   KEY_PASSWORD: ***
+2026-10-14T15:33:21.4620807Z   KEY_ALIAS: ***
+2026-10-14T15:33:21.4621142Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.47.7-x64/flutter
+2026-10-14T15:33:21.4621549Z   PUB_CACHE: /home/runner/.pub-cache
+2026-10-14T15:33:21.4621828Z ##[endgroup]
+2026-10-14T15:33:21.4788375Z ##[group]Run flutter build apk --release
+2026-10-14T15:33:21.4788739Z [36;1mflutter build apk --release[0m
+2026-10-14T15:33:21.4847479Z shell: /usr/bin/bash -e {0}
+2026-10-14T15:33:21.4847782Z env:
+2026-10-14T15:33:21.4848018Z   FLUTTER_VERSION: 3.47.7
+2026-10-14T15:33:21.4864290Z   ANDROID_KEYSTORE_B64: ***
+2026-10-14T15:33:21.4864625Z   KEYSTORE_PASSWORD: ***
+2026-10-14T15:33:21.4864909Z   KEY_PASSWORD: ***
+2026-10-14T15:33:21.4865154Z   KEY_ALIAS: ***
+2026-10-14T15:33:21.4865654Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.47.7-x64/flutter
+2026-10-14T15:33:21.4866143Z   PUB_CACHE: /home/runner/.pub-cache
+2026-10-14T15:33:21.4866657Z ##[endgroup]
+2026-10-14T15:33:21.7608875Z Resolving dependencies...
+2026-10-14T15:33:21.8572364Z Downloading packages...
+2026-10-14T15:33:21.9258936Z   code_assets 1.2.1 (2.1.0 available)
+2026-10-14T15:33:21.9259517Z   eip55 1.0.2 (1.0.3 available)
+2026-10-14T15:33:21.9260001Z   flutter_lints 4.0.0 (6.0.0 available)
+2026-10-14T15:33:21.9260598Z   flutter_riverpod 2.6.1 (3.4.3 available)
+2026-10-14T15:33:21.9261135Z   flutter_secure_storage 9.2.4 (11.2.0 available)
+2026-10-14T15:33:21.9261756Z   flutter_secure_storage_linux 1.2.3 (3.0.3 available)
+2026-10-14T15:33:21.9262380Z   flutter_secure_storage_macos 3.1.3 (4.0.0 available)
+2026-10-14T15:33:21.9263110Z   flutter_secure_storage_platform_interface 1.1.2 (2.1.1 available)
+2026-10-14T15:33:21.9263827Z   flutter_secure_storage_web 1.2.1 (2.1.1 available)
+2026-10-14T15:33:21.9264458Z   flutter_secure_storage_windows 3.1.2 (4.2.2 available)
+2026-10-14T15:33:21.9265040Z   go_router 14.8.1 (18.0.2 available)
+2026-10-14T15:33:21.9265503Z   hooks 2.0.2 (2.2.0 available)
+2026-10-14T15:33:21.9265950Z   js 0.6.7 (0.7.2 available)
+2026-10-14T15:33:21.9266646Z   json_rpc_2 3.0.3 (4.1.0 available)
+2026-10-14T15:33:21.9267125Z   lints 4.0.0 (6.1.0 available)
+2026-10-14T15:33:21.9267571Z   local_auth 2.3.0 (3.0.2 available)
+2026-10-14T15:33:21.9268065Z   local_auth_android 1.0.56 (2.3.0 available)
+2026-10-14T15:33:21.9268624Z   local_auth_darwin 1.6.1 (2.0.4 available)
+2026-10-14T15:33:21.9269162Z   local_auth_windows 1.0.11 (2.0.2 available)
+2026-10-14T15:33:21.9269747Z   material_color_utilities 0.13.0 (0.13.1 available)
+2026-10-14T15:33:21.9270303Z   meta 1.18.3 (1.19.0 available)
+2026-10-14T15:33:21.9270762Z   mobile_scanner 5.2.3 (7.4.2 available)
+2026-10-14T15:33:21.9271267Z   objective_c 9.5.0 (9.6.2 available)
+2026-10-14T15:33:21.9271762Z   pointycastle 3.9.1 (4.0.0 available)
+2026-10-14T15:33:21.9272248Z   qr 3.0.2 (4.0.0 available)
+2026-10-14T15:33:21.9272687Z   record_use 0.6.0 (1.1.1 available)
+2026-10-14T15:33:21.9273164Z   riverpod 2.6.1 (3.4.3 available)
+2026-10-14T15:33:21.9273629Z   sec 1.1.0 (1.1.1 available)
+2026-10-14T15:33:21.9275585Z   test_api 0.7.12 (0.7.15 available)
+2026-10-14T15:33:21.9278702Z   vector_math 2.4.0 (2.4.3 available)
+2026-10-14T15:33:21.9279662Z   wallet 0.0.13 (0.0.18 available)
+2026-10-14T15:33:21.9280427Z   web3dart 2.7.3 (3.0.3 available)
+2026-10-14T15:33:21.9281157Z   win32 5.15.0 (6.4.0 available)
+2026-10-14T15:33:21.9281893Z Got dependencies!
+2026-10-14T15:33:21.9282786Z 33 packages have newer versions incompatible with dependency constraints.
+2026-10-14T15:33:21.9283855Z Try `flutter pub outdated` for more information.
+2026-10-14T15:34:08.1663750Z Running Gradle task 'assembleRelease'...                        
+2026-10-14T15:34:08.1664785Z 
+2026-10-14T15:34:08.1687263Z FAILURE: Build failed with an exception.
+2026-10-14T15:34:08.1706718Z 
+2026-10-14T15:34:08.1707114Z * Where:
+2026-10-14T15:34:08.1727636Z Settings file '/home/runner/work/***-wallet-flutter/***-wallet-flutter/android/settings.gradle.kts' line: 20
+2026-10-14T15:34:08.1746785Z 
+2026-10-14T15:34:08.1761367Z * What went wrong:
+2026-10-14T15:34:08.1767358Z Error resolving plugin [id: 'dev.flutter.flutter-plugin-loader', version: '1.0.0']
+2026-10-14T15:34:08.1787554Z > A problem occurred configuring project ':gradle'.
+2026-10-14T15:34:08.1807737Z    > Could not resolve all artifacts for configuration 'classpath'.
+2026-10-14T15:34:08.1827078Z       > Could not find org.jetbrains.kotlin:kotlin-stdlib:2.2.21.
+2026-10-14T15:34:08.1846972Z         Searched in the following locations:
+2026-10-14T15:34:08.1851698Z           - https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-stdlib/2.2.21/kotlin-stdlib-2.2.21.pom
+2026-10-14T15:34:08.1870094Z         Required by:
+2026-10-14T15:34:08.1887167Z             buildscript of project ':gradle'
+2026-10-14T15:34:08.1907221Z       > Could not resolve org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.21.
+2026-10-14T15:34:08.1918115Z         Required by:
+2026-10-14T15:34:08.1954722Z             buildscript of project ':gradle' > org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:2.2.20
+2026-10-14T15:34:08.2016923Z          > Could not resolve org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.21.
+2026-10-14T15:34:08.2037634Z             > Could not parse POM https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin/2.2.21/kotlin-gradle-plugin-2.2.21.pom
+2026-10-14T15:34:08.2039372Z                > Could not find org.jetbrains.kotlin:kotlin-gradle-plugins-bom:2.2.21.
+2026-10-14T15:34:08.2057061Z                  Searched in the following locations:
+2026-10-14T15:34:08.2077660Z                    - https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.2.21/kotlin-gradle-plugins-bom-2.2.21.pom
+2026-10-14T15:34:08.2097199Z       > Could not find org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.2.21.
+2026-10-14T15:34:08.2114088Z         Searched in the following locations:
+2026-10-14T15:34:08.2117702Z           - https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.2.21/kotlin-gradle-plugin-api-2.2.21.pom
+2026-10-14T15:34:08.2137018Z         Required by:
+2026-10-14T15:34:08.2157783Z             buildscript of project ':gradle' > org.gradle.kotlin.kotlin-dsl:org.gradle.kotlin.kotlin-dsl.gradle.plugin:6.4.2 > org.gradle.kotlin:gradle-kotlin-dsl-plugins:6.4.2
+2026-10-14T15:34:08.2177137Z       > Could not find org.jetbrains.kotlin:kotlin-stdlib:2.2.21.
+2026-10-14T15:34:08.2178108Z         Searched in the following locations:
+2026-10-14T15:34:08.2197426Z           - https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-stdlib/2.2.21/kotlin-stdlib-2.2.21.pom
+2026-10-14T15:34:08.2217021Z         Required by:
+2026-10-14T15:34:08.2237887Z             buildscript of project ':gradle' > org.gradle.kotlin.kotlin-dsl:org.gradle.kotlin.kotlin-dsl.gradle.plugin:6.4.2 > org.gradle.kotlin:gradle-kotlin-dsl-plugins:6.4.2
+2026-10-14T15:34:08.2239654Z > There are 3 more failures with identical causes.
+2026-10-14T15:34:08.2256882Z 
+2026-10-14T15:34:08.2277007Z * Try:
+2026-10-14T15:34:08.2297903Z > If the artifact you are trying to retrieve can be found in the repository but without metadata in 'Maven POM' format, you need to adjust the 'metadataSources { ... }' of the repository declaration.
+2026-10-14T15:34:08.2299799Z > Run with --stacktrace option to get the stack trace.
+2026-10-14T15:34:08.2318406Z > Run with --info or --debug option to get more log output.
+2026-10-14T15:34:08.2337220Z > Run with --scan to get full insights from a Build Scan (powered by Develocity).
+2026-10-14T15:34:08.2355578Z > Get more help at https://help.gradle.org.
+2026-10-14T15:34:08.2376740Z 
+2026-10-14T15:34:08.2377154Z BUILD FAILED in 44s
+2026-10-14T15:34:08.7024064Z Running Gradle task 'assembleRelease'...                           46.4s
+2026-10-14T15:34:08.7602981Z Gradle task assembleRelease failed with exit code 1
+2026-10-14T15:34:08.7696855Z ##[error]Process completed with exit code 1.
+2026-10-14T15:34:08.7933949Z Post job cleanup.
+2026-10-14T15:34:08.7938249Z ##[start-action display=Cache pub dependencies;id=__aa8d464b-3387-457b-bb58-78e911f8289d.cache-pub]
+2026-10-14T15:34:08.7940565Z ##[end-action id=__aa8d464b-3387-457b-bb58-78e911f8289d.cache-pub;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-10-14T15:34:08.7942578Z ##[start-action display=Cache Flutter;id=__aa8d464b-3387-457b-bb58-78e911f8289d.cache-flutter]
+2026-10-14T15:34:08.7944609Z ##[end-action id=__aa8d464b-3387-457b-bb58-78e911f8289d.cache-flutter;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-10-14T15:34:08.8015172Z Post job cleanup.
+2026-10-14T15:34:08.8987025Z [command]/usr/bin/git version
+2026-10-14T15:34:08.9069162Z git version 2.55.0
+2026-10-14T15:34:08.9167553Z Temporarily overriding HOME='/home/runner/work/_temp/de2cfbde-9d7c-4bf4-8e82-82d045225f4d' before making global git config changes
+2026-10-14T15:34:08.9169339Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-14T15:34:08.9187543Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/***-wallet-flutter/***-wallet-flutter
+2026-10-14T15:34:08.9254725Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-14T15:34:08.9258210Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-14T15:34:08.9627639Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-14T15:34:08.9647065Z http.https://github.com/.extraheader
+2026-10-14T15:34:08.9677867Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-14T15:34:08.9768144Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-14T15:34:09.0443372Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-14T15:34:09.0547471Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-14T15:34:09.1549522Z Cleaning up orphan processes
+2026-10-14T15:34:09.1866187Z Terminate orphan process: pid (2692) (java)
+2026-10-14T15:34:09.1884456Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -7,7 +7,6 @@ import '../features/receive/receive_page.dart';
 import '../features/scan/scan_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/wallet/wallet_init_page.dart';
-import '../features/wallet/wallet_state.dart';
 
 /// 应用路由。
 ///

@@ -11,7 +11,6 @@ class BridgePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final wallet = ref.watch(walletStateProvider);
-    final theme = Theme.of(context);
 
     if (!wallet.isReady) {
       return Scaffold(
