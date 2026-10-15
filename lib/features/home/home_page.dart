@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/models/balance.dart';
-import '../bridge/bridge_page.dart';
 import '../receive/receive_page.dart';
 import '../send/send_page.dart';
 import '../settings/settings_page.dart';
