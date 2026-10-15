@@ -116,9 +116,9 @@ class _RedeemTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        TextField(
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
+        const TextField(
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
             labelText: '赎回数量',
             suffixText: 'wRCPU',
             border: OutlineInputBorder(),

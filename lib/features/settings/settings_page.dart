@@ -53,19 +53,18 @@ class SettingsPage extends ConsumerWidget {
             ),
           ]),
           _SettingsSection(title: '网络', children: [
-            ListTile(
-              leading: const Icon(Icons.network_check),
-              title: const Text('RPC 节点'),
-              subtitle: const Text('原生: 127.0.0.1:7337 | BSC: 公共节点'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {},
+            const ListTile(
+              leading: Icon(Icons.network_check),
+              title: Text('RPC 节点'),
+              subtitle: Text('原生: 127.0.0.1:7337 | BSC: 公共节点'),
+              trailing: Icon(Icons.chevron_right),
             ),
           ]),
           _SettingsSection(title: '关于', children: [
-            ListTile(
-              leading: const Icon(Icons.info),
-              title: const Text('版本'),
-              subtitle: const Text('v0.1.0+1'),
+            const ListTile(
+              leading: Icon(Icons.info),
+              title: Text('版本'),
+              subtitle: Text('v0.1.0+1'),
             ),
           ]),
         ],
