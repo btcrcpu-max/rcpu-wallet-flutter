@@ -29,7 +29,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ? _HomeTab(wallet: wallet, onQuickAction: _switchTab)
           : _InitGuide(onCreate: () => context.go('/wallet')),
       const _ReceiveTabRouter(),
-      const _BridgeTabRouter(),
+      const _PayTabRouter(),
       const _SettingsTabRouter(),
     ];
 
@@ -44,7 +44,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: '首页'),
           NavigationDestination(icon: Icon(Icons.qr_code_outlined), selectedIcon: Icon(Icons.qr_code), label: '收款'),
-          NavigationDestination(icon: Icon(Icons.swap_horiz_outlined), selectedIcon: Icon(Icons.swap_horiz), label: '跨链'),
+          NavigationDestination(icon: Icon(Icons.send_outlined), selectedIcon: Icon(Icons.send), label: '付款'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: '设置'),
         ],
       ),
@@ -122,9 +122,9 @@ class _HomeTab extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: () => onQuickAction(2), // 跨链
-                  icon: const Icon(Icons.swap_horiz),
-                  label: const Text('跨链'),
+                  onPressed: () => onQuickAction(2), // 付款
+                  icon: const Icon(Icons.send),
+                  label: const Text('付款'),
                 ),
               ),
             ],
@@ -220,9 +220,9 @@ class _ReceiveTabRouter extends StatelessWidget {
   Widget build(BuildContext context) => const ReceivePage();
 }
 
-/// 跨链页路由包装。
-class _BridgeTabRouter extends StatelessWidget {
-  const _BridgeTabRouter();
+/// 付款页路由包装。
+class _PayTabRouter extends StatelessWidget {
+  const _PayTabRouter();
   @override
   Widget build(BuildContext context) => const BridgePage();
 }

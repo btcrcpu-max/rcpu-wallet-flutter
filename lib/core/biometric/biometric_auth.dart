@@ -46,7 +46,8 @@ class BiometricAuth {
         localizedReason: reason,
         options: const AuthenticationOptions(
           stickyAuth: true,
-          biometricOnly: true,
+          biometricOnly: false,
+          useErrorDialogs: true,
         ),
       );
     } catch (_) {
