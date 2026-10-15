@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart' hide Address;
 
 import '../../core/models/address.dart';
 import '../../core/qr/qr_scanner.dart';
