@@ -296,7 +296,7 @@ class _SyncChip extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('端点: http://207.57.129.188/rpc'),
+            const Text('端点: http://207.57.129.188/rpc'),
             Text('区块高度: ${sync.height ?? '—'}'),
             Text('更新时间: $updatedText'),
             if (!sync.connected && sync.error != null) ...[
