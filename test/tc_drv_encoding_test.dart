@@ -45,7 +45,7 @@ void main() {
       final payload = Uint8List.fromList(
           List.generate(20, (i) => (i * 7) & 0xff));
       final encoded = Bech32.encode('rcpu', payload, bech32m: false);
-      final decoded = Bech32.decode(String.fromCharCodes(encoded),
+      final decoded = Bech32.decode(encoded,
           isBech32m: false);
       expect(decoded.hrp, 'rcpu');
       expect(
@@ -58,7 +58,7 @@ void main() {
       final payload = Uint8List.fromList(
           List.generate(54, (i) => (i * 13) & 0xff));
       final encoded = Bech32.encode('rcpux', payload, bech32m: true);
-      final decoded = Bech32.decode(String.fromCharCodes(encoded),
+      final decoded = Bech32.decode(encoded,
           isBech32m: true);
       expect(decoded.hrp, 'rcpux');
       expect(
@@ -70,10 +70,10 @@ void main() {
     test('bech32 与 bech32m 不可混用（交叉解码抛 FormatException）', () {
       final payload = Uint8List.fromList(
           List.generate(54, (i) => (i * 13) & 0xff));
-      final encodedM = String.fromCharCodes(
-          Bech32.encode('rcpux', payload, bech32m: true));
-      final encodedPlain = String.fromCharCodes(
-          Bech32.encode('rcpu', payload.sublist(0, 21), bech32m: false));
+      final encodedM =
+          Bech32.encode('rcpux', payload, bech32m: true);
+      final encodedPlain =
+          Bech32.encode('rcpu', payload.sublist(0, 21), bech32m: false);
       // bech32m 编码用 bech32 校验解码必须失败
       expect(() => Bech32.decode(encodedM, isBech32m: false),
           throwsFormatException);

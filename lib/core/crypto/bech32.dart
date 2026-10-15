@@ -20,7 +20,7 @@ class Bech32 {
   /// 将 5-bit 数据编码为 bech32 / bech32m 字符串。
   ///
   /// [data] 为 8-bit 原始字节，内部先做 8→5 ConvertBits（带填充）。
-  static Uint8List encode(String hrp, Uint8List data, {required bool bech32m}) {
+  static String encode(String hrp, Uint8List data, {required bool bech32m}) {
     final converted = convertBits(data, 8, 5, pad: true);
     final constant = bech32m ? bech32mConst : bech32Const;
     final checksum = _createChecksum(hrp, converted, constant);
@@ -28,7 +28,7 @@ class Bech32 {
     for (final v in [...converted, ...checksum]) {
       sb.write(charset[v]);
     }
-    return Uint8List.fromList(sb.toString().codeUnits);
+    return sb.toString();
   }
 
   /// 解码 bech32 / bech32m 字符串，返回 HRP 与 5-bit 数据（不含 checksum）。

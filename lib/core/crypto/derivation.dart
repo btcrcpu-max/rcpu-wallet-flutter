@@ -102,7 +102,7 @@ class Derivation {
       ...keyid,
       ...pub33,
     ]);
-    return _bech32String(Bech32.encode(confidentialHrp, payload, bech32m: true));
+    return Bech32.encode(confidentialHrp, payload, bech32m: true);
   }
 
   /// 明文地址编码：bech32（`0x00 || HASH160(pub33)`）。
@@ -112,11 +112,8 @@ class Derivation {
       confidentialVersion,
       ...keyid,
     ]);
-    return _bech32String(Bech32.encode(plainHrp, payload, bech32m: false));
+    return Bech32.encode(plainHrp, payload, bech32m: false);
   }
-
-  /// 将 bech32 encode 返回的字节序列还原为字符串。
-  static String _bech32String(Uint8List bytes) => String.fromCharCodes(bytes);
 
   /// HASH160 = RIPEMD160(SHA256(msg))。
   static Uint8List hash160(Uint8List msg) {
