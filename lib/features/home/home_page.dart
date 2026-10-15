@@ -5,7 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/models/address.dart';
 import '../../../core/models/balance.dart';
-import '../wallet_state.dart';
+import '../wallet/wallet_state.dart';
 
 /// 首页：总资产卡片 + 资产列表 + 底部导航。
 class HomePage extends ConsumerStatefulWidget {
@@ -161,10 +161,10 @@ class _AssetCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: iconColor.withOpacity(0.12),
-          child: Icon(icon, color: iconColor),
-        ),
+                leading: CircleAvatar(
+                  backgroundColor: iconColor.withAlpha(31),
+                  child: Icon(icon, color: iconColor),
+                ),
         title: Text(assetName, style: theme.textTheme.titleMedium),
         subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
         trailing: Text(balance.raw, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),

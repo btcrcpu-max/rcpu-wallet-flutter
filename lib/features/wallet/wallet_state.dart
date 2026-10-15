@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/crypto/derivation.dart';
-import '../../core/models/address.dart';
 import '../../core/models/balance.dart';
 import '../../core/secure_store/secure_store.dart';
 import 'wallet_service.dart';
