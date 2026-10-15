@@ -39,7 +39,12 @@ class NativeRpcClient {
 
   NativeRpcClient({this.baseUrl = 'http://207.57.129.188/rpc'}) {
     _dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
+      // 注意：服务端 nginx `location /rpc { proxy_pass .../; }` 对
+      // `/rpc/`（带尾斜杠）会转发成 `//` 导致 404，因此请求路径留空，
+      // 直接以 baseUrl 作为完整 URL 发起 POST。
+      baseUrl: baseUrl.endsWith('/')
+          ? baseUrl.substring(0, baseUrl.length - 1)
+          : baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 20),
       headers: {
@@ -54,7 +59,7 @@ class NativeRpcClient {
     final Response<dynamic> resp;
     try {
       resp = await _dio.post(
-        '/',
+        '',
         data: jsonEncode({
           'jsonrpc': '2.0',
           'id': id,
