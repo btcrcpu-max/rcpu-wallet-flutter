@@ -101,8 +101,8 @@ class _ScanPageState extends ConsumerState<ScanPage> {
       ),
       body: MobileScanner(
         onDetect: (capture) {
-          final barcode = capture.barcodes.firstOrNull;
-          final raw = barcode?.rawValue;
+          final barcodes = capture.barcodes;
+          final raw = barcodes.isNotEmpty ? barcodes.first.rawValue : null;
           if (raw == null || raw.isEmpty) return;
           setState(() => _scanning = false);
           _parseQr(raw);
