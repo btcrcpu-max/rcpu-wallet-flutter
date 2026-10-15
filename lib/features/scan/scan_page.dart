@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../payment/payment_service.dart';
 import '../wallet/wallet_state.dart';
@@ -15,6 +16,7 @@ class ScanPage extends ConsumerStatefulWidget {
 class _ScanPageState extends ConsumerState<ScanPage> {
   final _addressController = TextEditingController();
   final _amountController = TextEditingController();
+  bool _scanning = false;
 
   @override
   void dispose() {
@@ -26,13 +28,16 @@ class _ScanPageState extends ConsumerState<ScanPage> {
   @override
   Widget build(BuildContext context) {
     final wallet = ref.watch(walletStateProvider);
-    final theme = Theme.of(context);
 
     if (!wallet.isReady) {
       return Scaffold(
         appBar: AppBar(title: const Text('扫码付款')),
         body: const Center(child: Text('钱包未初始化')),
       );
+    }
+
+    if (_scanning) {
+      return _buildScanner(context);
     }
 
     return Scaffold(
@@ -47,15 +52,13 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                 title: const Text('扫一扫'),
                 subtitle: const Text('扫描收款方二维码'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  // TODO: 接入 mobile_scanner
-                },
+                onTap: () => setState(() => _scanning = true),
               ),
             ),
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 8),
-            Text('手动输入', style: theme.textTheme.titleMedium),
+            const Text('手动输入', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             TextField(
               controller: _addressController,
@@ -68,7 +71,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
             const SizedBox(height: 12),
             TextField(
               controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
                 labelText: '金额',
                 suffixText: 'RCPU',
@@ -87,6 +90,44 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     );
   }
 
+  Widget _buildScanner(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('扫码'),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => setState(() => _scanning = false),
+        ),
+      ),
+      body: MobileScanner(
+        onDetect: (capture) {
+          final barcode = capture.barcodes.firstOrNull;
+          final raw = barcode?.rawValue;
+          if (raw == null || raw.isEmpty) return;
+          setState(() => _scanning = false);
+          _parseQr(raw);
+        },
+      ),
+    );
+  }
+
+  void _parseQr(String raw) {
+    String addr = raw;
+    String? amt;
+    // rcpu:rcpux1xxx?amount=1.5
+    if (raw.startsWith('rcpu:')) {
+      final uri = Uri.tryParse(raw);
+      if (uri != null) {
+        addr = uri.path;
+        amt = uri.queryParameters['amount'];
+      }
+    }
+    setState(() {
+      _addressController.text = addr;
+      if (amt != null) _amountController.text = amt;
+    });
+  }
+
   void _submitPayment() {
     final addr = _addressController.text.trim();
     final amount = _amountController.text.trim();
@@ -97,7 +138,6 @@ class _ScanPageState extends ConsumerState<ScanPage> {
       return;
     }
 
-    // 复用 PaymentService 的协议校验（类型判定 + 金额合法性）。
     String? error;
     try {
       PaymentService.parseAndValidate('rcpu:$addr?amount=$amount');

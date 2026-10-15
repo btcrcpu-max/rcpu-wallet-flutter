@@ -28,7 +28,7 @@ class NativeRpcClient {
 
   late final Dio _dio;
 
-  NativeRpcClient({this.baseUrl = 'http://127.0.0.1:7337'}) {
+  NativeRpcClient({this.baseUrl = 'https://rpc.rcpu.top'}) {
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 10),

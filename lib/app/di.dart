@@ -20,7 +20,7 @@ final biometricAuthProvider = Provider<BiometricAuth>((ref) {
   return BiometricAuth();
 });
 
-/// 原生链 RPC 客户端（RPC 7337 / 轻量代理）。
+/// 原生链 RPC 客户端（公网节点 / 轻量代理）。
 final nativeRpcProvider = Provider<NativeRpcClient>((ref) {
   return NativeRpcClient();
 });
