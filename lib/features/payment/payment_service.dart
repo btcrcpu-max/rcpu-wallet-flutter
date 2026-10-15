@@ -229,14 +229,15 @@ class PaymentService {
     );
   }
 
-  /// 明文地址 → P2WPKH 锁定脚本（`0x00 0x14 || h160`，22 字节）。
+  /// 明文地址 → P2WPKH 锁定脚本（`0x00 0x14 || program`，22 字节）。
+  ///
+  /// rcpu1 为 BIP173 witness v0：version group 与 program 分组解析。
   Uint8List _p2wpkhScript(Address addr) {
-    // rcpu1 payload = 0x00 || hash160(20B)；取 hash160 段。
-    final payload = Bech32.decodeToBytes(addr.value, isBech32m: false);
-    if (payload.length != 21 || payload[0] != 0x00) {
-      throw const FormatException('明文地址解码失败（payload 须为 0x00 || h160）');
+    final w = Bech32.decodeWitness(addr.value);
+    if (w.version != 0 || w.program.length != 20) {
+      throw const FormatException('明文地址须为 witness v0 P2WPKH（20B program）');
     }
-    return Uint8List.fromList([0x00, 0x14, ...payload.sublist(1, 21)]);
+    return Uint8List.fromList([0x00, 0x14, ...w.program]);
   }
 
   /// 估算交易 vsize 并乘费率：base + witness/4（P2TR 输入 66B witness，

@@ -69,6 +69,72 @@ class Bech32 {
     return convertBits(decoded.data, 5, 8, pad: false);
   }
 
+  /// 编码 SegWit witness 地址（BIP173 / BIP350 标准分组）。
+  ///
+  /// witness version 单独占 1 个 5-bit group，program 独立做 8→5 ConvertBits；
+  /// version 0 使用 bech32 校验常量，version 1..16 使用 bech32m（BIP350 规则）。
+  /// 不得把 version 混入 program 一起转换，否则 Bitcoin Core 解析为
+  /// 「Invalid padding / 非法 program 长度」并拒绝地址。
+  static String encodeWitness(String hrp, int version, Uint8List program) {
+    if (version < 0 || version > 16) {
+      throw const FormatException('witness version 须在 0..16');
+    }
+    final useM = version != 0;
+    final data = <int>[version, ...convertBits(program, 8, 5, pad: true)];
+    final constant = useM ? bech32mConst : bech32Const;
+    final checksum = _createChecksum(hrp, data, constant);
+    final sb = StringBuffer()..write(hrp)..write('1');
+    for (final v in [...data, ...checksum]) {
+      sb.write(charset[v]);
+    }
+    return sb.toString();
+  }
+
+  /// 解码 witness 地址，返回 (version, program)。
+  ///
+  /// 同时接受 bech32 与 bech32m 两种校验（按 BIP350：version 0 必须 bech32，
+  /// version 1..16 必须 bech32m，交叉组合抛 [FormatException]）；
+  /// program 转换使用严格模式（拒绝非零填充位）。
+  static WitnessAddress decodeWitness(String input) {
+    final lower = input.toLowerCase();
+    final sep = lower.lastIndexOf('1');
+    if (sep < 1 || sep + 7 > lower.length) {
+      throw const FormatException('bech32 格式非法: 缺少或错误的 1 分隔符');
+    }
+    final hrp = lower.substring(0, sep);
+    final dataPart = lower.substring(sep + 1);
+    final data = <int>[];
+    for (var i = 0; i < dataPart.length; i++) {
+      final idx = charset.indexOf(dataPart[i]);
+      if (idx < 0) {
+        throw FormatException('bech32 字符集外字符: ${dataPart[i]}');
+      }
+      data.add(idx);
+    }
+    final polymod = _polyMod([..._expandHrp(hrp), ...data]);
+    if (polymod != bech32Const && polymod != bech32mConst) {
+      throw const FormatException('bech32 checksum 校验失败');
+    }
+    if (data.isEmpty) {
+      throw const FormatException('bech32 数据段为空');
+    }
+    final version = data[0];
+    if (version < 0 || version > 16) {
+      throw const FormatException('witness version 非法: $version');
+    }
+    final isM = polymod == bech32mConst;
+    if ((version == 0) == isM) {
+      throw const FormatException('witness version 与 checksum 类型不匹配');
+    }
+    final program = convertBits(
+      Uint8List.fromList(data.sublist(1, data.length - 6)),
+      5,
+      8,
+      pad: false,
+    );
+    return WitnessAddress(version: version, program: program);
+  }
+
   /// 通用 ConvertBits（8→5 / 5→8）。
   ///
   /// [pad] 为 true 时按目标位宽补齐尾段（编码用）；为 false 时拒绝不完整尾段
@@ -148,4 +214,12 @@ class Bech32Decoded {
   final Uint8List data;
 
   const Bech32Decoded({required this.hrp, required this.data});
+}
+
+/// witness 地址解码结果：version 与 program。
+class WitnessAddress {
+  final int version;
+  final Uint8List program;
+
+  const WitnessAddress({required this.version, required this.program});
 }

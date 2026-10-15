@@ -108,19 +108,39 @@ void main() {
       expect(payload.sublist(21, 54), bundle.spendPub);
     });
 
-    test('明文地址 rcpu1 为 bech32，payload 21B 结构正确', () {
+    test('BIP173 官方向量 encode：witness v0 编码与官方向量一致', () {
+      // 与上方解码向量同一 program，encode 结果必须逐字符还原官方向量地址。
+      final program = Uint8List.fromList([
+        0x75, 0x1e, 0x76, 0xe8, 0x19, 0x91, 0x96, 0xd4, //
+        0x54, 0x94, 0x1c, 0x45, 0xd1, 0xb3, 0xa3, 0x23, //
+        0xf1, 0x43, 0x3b, 0xd6,
+      ]);
+      expect(Bech32.encodeWitness('bc', 0, program),
+          'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4');
+    });
+
+    test('decodeWitness：官方向量 version/program 分组解析', () {
+      final w = Bech32.decodeWitness(
+          'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4');
+      expect(w.version, 0);
+      expect(w.program.length, 20);
+      expect(w.program[0], 0x75);
+      expect(w.program[19], 0xd6);
+    });
+
+    test('明文地址 rcpu1 为 BIP173 witness v0（version 单独分组）', () {
       final d = Derivation(mnemonic);
       final addr = d.deriveNativePlainAddress().value;
       expect(addr.startsWith('rcpu1'), isTrue);
 
-      final decoded = Bech32.decode(addr, isBech32m: false);
-      expect(decoded.hrp, Derivation.plainHrp);
-      final payload = Bech32.convertBits(decoded.data, 5, 8, pad: false);
-      expect(payload.length, 21);
-      expect(payload[0], Derivation.confidentialVersion);
+      final w = Bech32.decodeWitness(addr);
+      expect(w.version, 0);
+      expect(w.program.length, 20);
 
       final bundle = d.deriveNativePlainKey();
-      expect(payload.sublist(1, 21), bundle.keyid);
+      expect(w.program, bundle.keyid);
+      // 长度校验：1(version group) + 32(program groups) + 6(checksum) = 39
+      expect(addr.length - 'rcpu1'.length, 39);
     });
   });
 

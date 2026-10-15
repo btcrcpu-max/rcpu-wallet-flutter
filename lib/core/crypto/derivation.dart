@@ -105,14 +105,14 @@ class Derivation {
     return Bech32.encode(confidentialHrp, payload, bech32m: true);
   }
 
-  /// 明文地址编码：bech32（`0x00 || HASH160(pub33)`）。
+  /// 明文地址编码：BIP173 witness v0（`0x00 0x14 || HASH160(pub33)`）。
+  ///
+  /// version 单独分组、program（HASH160 20B）独立 8→5 转换；
+  /// 与 Bitcoin Core 系节点 validateaddress 完全兼容
+  /// （此前 version 混入 payload 整体转换导致节点拒绝地址）。
   static String _encodePlain(Uint8List pub33) {
     final keyid = hash160(pub33);
-    final payload = Uint8List.fromList([
-      confidentialVersion,
-      ...keyid,
-    ]);
-    return Bech32.encode(plainHrp, payload, bech32m: false);
+    return Bech32.encodeWitness(plainHrp, 0, keyid);
   }
 
   /// HASH160 = RIPEMD160(SHA256(msg))。

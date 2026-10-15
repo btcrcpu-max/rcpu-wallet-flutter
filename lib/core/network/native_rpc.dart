@@ -85,11 +85,10 @@ class NativeRpcClient {
   String? _rawDescriptorFor(String address) {
     if (!address.startsWith('rcpu1')) return null;
     try {
-      final payload = Bech32.decodeToBytes(address, isBech32m: false);
-      if (payload.length != 21 || payload[0] != 0x00) return null;
-      final hash160 = payload.sublist(1);
+      final w = Bech32.decodeWitness(address);
+      if (w.version != 0 || w.program.length != 20) return null;
       final sb = StringBuffer('0014');
-      for (final b in hash160) {
+      for (final b in w.program) {
         sb.write(b.toRadixString(16).padLeft(2, '0'));
       }
       return 'raw($sb)';

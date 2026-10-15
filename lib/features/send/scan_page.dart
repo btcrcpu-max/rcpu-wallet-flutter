@@ -55,7 +55,42 @@ class _ScanPageState extends State<ScanPage> {
       appBar: AppBar(title: const Text('扫描收款码')),
       body: Stack(
         children: [
-          MobileScanner(onDetect: _onDetect),
+          MobileScanner(
+            onDetect: _onDetect,
+            errorBuilder: (context, error) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.photo_camera_outlined,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      const SizedBox(height: 12),
+                      const Text('相机不可用',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '请检查系统权限：设置 → 应用 → rcpu_wallet → 权限 → 相机，'
+                        '选择「允许」后返回重试。',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        icon: const Icon(Icons.arrow_back),
+                        label: const Text('返回'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
