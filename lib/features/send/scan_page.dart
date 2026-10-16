@@ -58,6 +58,11 @@ class _ScanPageState extends State<ScanPage> {
           MobileScanner(
             onDetect: _onDetect,
             errorBuilder: (context, error, child) {
+              // 展示真实错误码，便于区分权限拒绝 / 相机被占用 /
+              // ML Kit 初始化失败等不同根因（统一文案会误导排查）。
+              final detail = StringBuffer()
+                ..write('错误码: ${error.errorCode}')
+                ..write('\n${error.errorDetails?.message ?? ''}');
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -70,13 +75,18 @@ class _ScanPageState extends State<ScanPage> {
                         color: Theme.of(context).colorScheme.outline,
                       ),
                       const SizedBox(height: 12),
-                      const Text('相机不可用',
+                      const Text('相机启动失败',
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
+                      Text(
+                        detail.toString(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(height: 8),
                       const Text(
-                        '请检查系统权限：设置 → 应用 → rcpu_wallet → 权限 → 相机，'
-                        '选择「允许」后返回重试。',
+                        '若错误码为 permissionDenied：设置 → 应用 → rcpu_wallet → 权限 → 相机，选择「允许」后返回重试。',
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
