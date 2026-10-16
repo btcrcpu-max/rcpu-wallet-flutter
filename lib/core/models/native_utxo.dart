@@ -51,6 +51,15 @@ class NativeUtxo {
     return spk.length == 34 && spk[0] == 0x51 && spk[1] == 0x20;
   }
 
+  /// 是否为 P2WPKH 可签名输入（`0x00 0x14 || h160`，22 字节）。
+  ///
+  /// BIP84 明文地址（rcpu1...）对应的链上输出形态；
+  /// 签名走 BIP143 sighash + secp256k1 ECDSA（非 Schnorr）。
+  bool get isP2wpkhInput {
+    final spk = _hexToBytes(scriptPubKey);
+    return spk.length == 22 && spk[0] == 0x00 && spk[1] == 0x14;
+  }
+
   static Uint8List _hexToBytes(String hex) {
     final h = hex.trim().startsWith('0x') ? hex.trim().substring(2) : hex.trim();
     if (h.isEmpty) return Uint8List(0);

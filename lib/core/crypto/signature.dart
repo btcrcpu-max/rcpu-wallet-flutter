@@ -1,6 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:pointycastle/ecc/api.dart';
+import 'package:pointycastle/ecc/curves/secp256k1.dart';
+import 'package:pointycastle/api.dart' as pc;
+import 'package:pointycastle/digests/sha256.dart';
+import 'package:pointycastle/signers/ecdsa_signer.dart';
 import 'package:web3dart/crypto.dart';
 
 import 'bip340.dart';
@@ -108,13 +113,13 @@ class SignatureService {
           '（${tx.inputs.length}）不一致');
     }
 
-    // 逐输入签名：BIP341 sighash -> BIP340 签名 -> 写回 witness。
+    // 逐输入校验脚本类型：P2TR（Schnorr/BIP341）或 P2WPKH（ECDSA/BIP143）。
     final parsedPrevOuts = <NativePrevOut>[];
     for (var i = 0; i < tx.inputs.length; i++) {
       final prev = prevOuts[i];
-      if (!Bip341.isP2tr(prev.scriptPubKey)) {
+      if (!Bip341.isP2tr(prev.scriptPubKey) && !_isP2wpkh(prev.scriptPubKey)) {
         throw const FormatException(
-            '仅支持 P2TR 输入（NativePrevOut.scriptPubKey 须为 0x51 0x20 || x32）');
+            '仅支持 P2TR（0x51 0x20 || x32）或 P2WPKH（0x00 0x14 || h160）输入');
       }
       parsedPrevOuts.add(NativePrevOut(
         scriptPubKey: prev.scriptPubKey,
@@ -123,16 +128,149 @@ class SignatureService {
     }
 
     for (var i = 0; i < tx.inputs.length; i++) {
-      final sighash =
-          Bip341.taprootKeyPathSighash(tx: tx, prevOuts: parsedPrevOuts, inputIndex: i);
-      final sig = Bip340.sign(privKey, sighash);
-      // P2TR key-path witness：单元素 64B 签名（SIGHASH_DEFAULT 无尾部字节）。
-      tx.inputs[i].witness
-        ..clear()
-        ..add(sig);
+      final spk = parsedPrevOuts[i].scriptPubKey;
+      if (Bip341.isP2tr(spk)) {
+        // P2TR key-path：BIP341 sighash + BIP340 签名（单元素 witness）。
+        final sighash = Bip341.taprootKeyPathSighash(
+            tx: tx, prevOuts: parsedPrevOuts, inputIndex: i);
+        final sig = Bip340.sign(privKey, sighash);
+        tx.inputs[i].witness
+          ..clear()
+          ..add(sig);
+      } else {
+        // P2WPKH：BIP143 sighash + secp256k1 ECDSA（DER + SIGHASH_ALL），
+        // witness 为 [签名, 压缩公钥]（BIP141 标准形态）。
+        final sighash = _bip143Sighash(tx, parsedPrevOuts, i);
+        final sig = _ecdsaSignSecp256k1(privKey, sighash);
+        tx.inputs[i].witness
+          ..clear()
+          ..add(sig)
+          ..add(_compressedPubKey(privKey));
+      }
     }
 
     return NativeTxCodec.bytesToHex(tx.serialize());
+  }
+
+  /// P2WPKH 锁定脚本判定（`0x00 0x14 || h160`，22 字节）。
+  static bool _isP2wpkh(Uint8List spk) =>
+      spk.length == 22 && spk[0] == 0x00 && spk[1] == 0x14;
+
+  /// BIP143 sighash（SIGHASH_ALL）：用于 witness v0 P2WPKH 输入。
+  static Uint8List _bip143Sighash(
+      NativeTx tx, List<NativePrevOut> prevOuts, int index) {
+    // hashPrevouts = dsha256(全部输入 outpoint)
+    final hp = BytesBuilder();
+    for (final inp in tx.inputs) {
+      hp.add(inp.prevTxid);
+      hp.add(_le32(inp.prevVout));
+    }
+    final hashPrevouts = _dsha256(hp.toBytes());
+    // hashSequence = dsha256(全部输入 sequence)
+    final hs = BytesBuilder();
+    for (final inp in tx.inputs) {
+      hs.add(_le32(inp.sequence));
+    }
+    final hashSequence = _dsha256(hs.toBytes());
+    // hashOutputs = dsha256(全部输出序列化)
+    final ho = BytesBuilder();
+    for (final o in tx.outputs) {
+      ho.add(_le64(o.value));
+      ho.add(NativeTxCodec.encodeVarInt(o.scriptPubKey.length));
+      ho.add(o.scriptPubKey);
+    }
+    final hashOutputs = _dsha256(ho.toBytes());
+    // scriptCode = 0x19 76 a9 14 <h160> 88 ac（P2PKH 模板 + 长度前缀）
+    final h160 = prevOuts[index].scriptPubKey.sublist(2, 22);
+    final scriptCode =
+        Uint8List.fromList([0x19, 0x76, 0xa9, 0x14, ...h160, 0x88, 0xac]);
+
+    final p = BytesBuilder()
+      ..add(_le32(tx.version))
+      ..add(hashPrevouts)
+      ..add(hashSequence)
+      ..add(tx.inputs[index].prevTxid)
+      ..add(_le32(tx.inputs[index].prevVout))
+      ..add(scriptCode)
+      ..add(_le64(prevOuts[index].amount))
+      ..add(_le32(tx.inputs[index].sequence))
+      ..add(hashOutputs)
+      ..add(_le32(tx.locktime))
+      ..add(_le32(1)); // SIGHASH_ALL
+    return _dsha256(p.toBytes());
+  }
+
+  /// secp256k1 ECDSA 签名（RFC6979 确定性 nonce，low-S 规范化），
+  /// 返回 DER 编码 + SIGHASH_ALL（0x01）后缀。
+  static Uint8List _ecdsaSignSecp256k1(Uint8List privKey, Uint8List msgHash) {
+    final domain = ECCurve_secp256k1();
+    final d = _bytesToBigInt(privKey);
+    final signer = ECDSASigner(null, HMacDSAKCalculator(SHA256Digest()))
+      ..init(true, pc.PrivateKeyParameter(ECPrivateKey(d, domain)));
+    final sig = signer.generateSignature(msgHash);
+    var s = sig.s;
+    final n = domain.n;
+    if (s.compareTo(n >> 1) > 0) {
+      s = n - s; // BIP62/BIP146 low-S
+    }
+    final der = _derEncode(sig.r, s);
+    return Uint8List.fromList([...der, 0x01]);
+  }
+
+  /// 压缩公钥（0x02/0x03 || x32），P2WPKH witness 第二元素。
+  static Uint8List _compressedPubKey(Uint8List privKey) {
+    final pub64 = privateKeyToPublic(_bytesToBigInt(privKey)); // x||y
+    final prefix = (pub64[63] & 1) == 0 ? 0x02 : 0x03;
+    return Uint8List.fromList([prefix, ...pub64.sublist(0, 32)]);
+  }
+
+  /// DER 整数编码（去前导零，最高位置位时补 0x00）。
+  static Uint8List _derEncode(BigInt r, BigInt s) {
+    List<int> enc(BigInt v) {
+      final b = _bigIntToBytes(v);
+      final body = (b.isNotEmpty && (b[0] & 0x80) != 0) ? [0x00, ...b] : b;
+      return [0x02, body.length, ...body];
+    }
+
+    final body = [...enc(r), ...enc(s)];
+    return Uint8List.fromList([0x30, body.length, ...body]);
+  }
+
+  static Uint8List _dsha256(Uint8List data) {
+    final d = SHA256Digest();
+    return d.process(d.process(data));
+  }
+
+  static Uint8List _le32(int v) => Uint8List.fromList(
+      [v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff]);
+
+  static Uint8List _le64(BigInt v) {
+    final out = Uint8List(8);
+    var t = v;
+    for (var i = 0; i < 8; i++) {
+      out[i] = (t & BigInt.from(0xff)).toInt();
+      t = t >> 8;
+    }
+    return out;
+  }
+
+  static BigInt _bytesToBigInt(Uint8List bytes) {
+    var v = BigInt.zero;
+    for (final b in bytes) {
+      v = (v << 8) | BigInt.from(b);
+    }
+    return v;
+  }
+
+  static List<int> _bigIntToBytes(BigInt v) {
+    if (v == BigInt.zero) return [0x00];
+    final out = <int>[];
+    var t = v;
+    while (t > BigInt.zero) {
+      out.insert(0, (t & BigInt.from(0xff)).toInt());
+      t = t >> 8;
+    }
+    return out;
   }
 
   /// 从交易输入携带的「spk 模板」推导 prevout：明文场景下，如果输入

@@ -151,12 +151,14 @@ class PaymentService {
     }
 
     // 拉取 UTXO（测试可注入；生产走 get_utxos 代理）。
+    // 可选输入：P2WPKH（BIP84 明文地址，链上实际形态）与
+    // P2TR（测试/未来 taproot 地址）。
     final pool = (utxos ?? await nativeRpc.getUtxos(fromAddress))
-        .where((u) => u.confirmed && u.isP2trInput)
+        .where((u) => u.confirmed && (u.isP2wpkhInput || u.isP2trInput))
         .toList()
       ..sort((a, b) => a.amountMicro.compareTo(b.amountMicro));
     if (pool.isEmpty) {
-      throw StateError('没有可花费的 P2TR UTXO（余额不足或未同步）');
+      throw StateError('没有可花费的 P2WPKH/P2TR UTXO（余额不足或未同步）');
     }
 
     final toScript = _p2wpkhScript(to);
@@ -240,8 +242,9 @@ class PaymentService {
     return Uint8List.fromList([0x00, 0x14, ...w.program]);
   }
 
-  /// 估算交易 vsize 并乘费率：base + witness/4（P2TR 输入 66B witness，
-  /// P2WPKH 输出 31B）。返回 micro 手续费。
+  /// 估算交易 vsize 并乘费率：base + witness/4。witness 按保守值
+  /// 110B/输入（P2WPKH：签名 ~73B + 压缩公钥 33B；P2TR 仅 66B，
+  /// 统一取大者避免低估手续费）。返回 micro 手续费。
   int _estimateFee(int nIn, int nOut, int feeRateMicroPerByte) {
     final base = 4 /*version*/ +
         1 /*vin varint*/ +
@@ -249,7 +252,7 @@ class PaymentService {
         1 /*vout varint*/ +
         nOut * (8 + 1 + 22) + // value + scriptLen + P2WPKH(22)
         4 /*locktime*/;
-    final witness = nIn * (1 + 1 + 64); // 元素数 + 长度 + Schnorr 64B
+    final witness = nIn * 110; // 栈项数 + 签名(~73B) + 压缩公钥(33B)
     final vsize = base + (witness + 3) ~/ 4;
     return vsize * feeRateMicroPerByte;
   }

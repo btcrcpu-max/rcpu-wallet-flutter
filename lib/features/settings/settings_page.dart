@@ -252,7 +252,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ListTile(
               leading: Icon(Icons.info),
               title: Text('版本'),
-              subtitle: Text('v0.3.5'),
+              subtitle: Text('v0.3.6'),
             ),
           ]),
           _SettingsSection(title: '钱包', children: [
