@@ -216,8 +216,12 @@ class NativeRpcClient {
           final spkHex = spk is Map
               ? (spk['hex'] ?? '').toString()
               : (spk ?? '').toString();
+          // scantxoutset 返回的 txid 为显示字节序（大端 hex）；
+          // NativeUtxo.prevTxid 契约是内部字节序（交易序列化原样），
+          // 必须反转 32 字节，否则广播报 bad-txns-inputs-missingorspent。
+          final txidBytes = _hexToBytes((json['txid'] ?? '').toString());
           return NativeUtxo(
-            prevTxid: _hexToBytes((json['txid'] ?? '').toString()),
+            prevTxid: Uint8List.fromList(txidBytes.reversed.toList()),
             vout: (json['vout'] as num?)?.toInt() ?? 0,
             amountMicro: (((json['amount'] as num?)?.toDouble() ?? 0.0) * 1e8).toInt(),
             scriptPubKey: spkHex,
