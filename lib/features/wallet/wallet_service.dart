@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../core/crypto/derivation.dart';
 import '../../core/crypto/mnemonic.dart';
 import '../../core/models/address.dart';
@@ -44,6 +46,18 @@ class WalletService {
       private: d.deriveNativePrivateAddress(),
       bsc: d.deriveBscAddress(),
     );
+  }
+
+  /// 隐私路径（`m/84'/1'/0'/1/0`）花费私钥，供隐私地址 CT 余额解盲使用。
+  ///
+  /// 解盲（Path C rewind nonce = HKDF(ECDH(priv, ephemeral))) 需要该私钥；
+  /// 私钥仅在内存中派生，不落盘、不外传。
+  Future<Uint8List> deriveNativePrivateSpendPriv() async {
+    final mnemonic = await _store.readMnemonic();
+    if (mnemonic == null) {
+      throw StateError('钱包未初始化');
+    }
+    return Derivation(mnemonic).deriveNativePrivateKey().spendPriv;
   }
 }
 

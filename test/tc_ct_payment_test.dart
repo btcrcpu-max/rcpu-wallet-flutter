@@ -15,6 +15,7 @@ import 'package:rcpu_wallet/core/models/tx_record.dart';
 import 'package:rcpu_wallet/core/network/ct_helper_client.dart';
 import 'package:rcpu_wallet/core/network/native_rpc.dart';
 import 'package:rcpu_wallet/core/utils/ct_resolver.dart';
+import 'package:rcpu_wallet/features/native/native_service.dart';
 import 'package:rcpu_wallet/features/payment/payment_service.dart';
 
 /// TC-CT-PAY-01：机密交易（CT）支付闭环（假 helper + 假 RPC，确定性）。
@@ -347,5 +348,75 @@ void main() {
     expect(in0['blind_hex'], _rep('aa', 32));
     expect(in0['script_pubkey_hex'], ctSpk);
     expect(rpc.broadcastHex, isNotNull);
+  });
+
+  test('隐私地址 CT 余额解盲：金额 0 的盲化输出本地 rewind + 代理已解盲出账直接计入', () async {
+    final ctPub = sig.compressedPubKey(ctPriv);
+    final keyidHex = _hexOf(Derivation.hash160(ctPub));
+    final ctSpk = '0014$keyidHex';
+
+    final ephPriv =
+        Uint8List.fromList(List.generate(32, (i) => (i + 5) & 0xff));
+    final ephPub = sig.compressedPubKey(ephPriv);
+    final expectedNonce = derivePathCNonce(
+      ecdhSharedX(ctPriv, ephPub),
+      Uint8List.fromList(_bytesOf(ctSpk)),
+    );
+
+    final srv = _FakeCtServer();
+    srv.xctoutHandler = (_) => {
+          'commitment_hex': '02${_rep('cc', 32)}',
+          'rangeproof_hex': _rep('dd', 200),
+          'nonce_prefix': 0x04,
+          'nonce_x_hex': _hexOf(ephPub.sublist(1, 33)),
+          'script_pubkey_hex': ctSpk,
+        };
+    srv.rewindHandler = (body) => body['nonce_hex'] == _hexOf(expectedNonce)
+        ? {'amount_micro': 200000000, 'blind_hex': _rep('aa', 32)}
+        : {'error': 'rangeproof_rewind failed'};
+    await srv.start();
+    addTearDown(srv.stop);
+
+    // 盲化输出：scantxoutset 读金额为 0，须本地解盲。
+    final blinded = NativeUtxo(
+      prevTxid: Uint8List.fromList(List.generate(32, (i) => 0x33)),
+      vout: 2,
+      amountMicro: 0,
+      scriptPubKey: ctSpk,
+      privacy: 'ct',
+    );
+    // 代理已 unblind 的出账：直接计入，不再 rewind。
+    final already = NativeUtxo(
+      prevTxid: Uint8List.fromList(List.generate(32, (i) => 0x44)),
+      vout: 0,
+      amountMicro: 300000000,
+      scriptPubKey: ctSpk,
+      privacy: 'ct',
+    );
+    final rpc = _CannedRpc(
+      utxosByAddress: {privAddr.value: [blinded, already]},
+      rawTxHex: '0300deadbeef',
+    );
+    final service = NativeService(
+      rpc,
+      ctHelper: CtHelperClient(endpoint: 'http://127.0.0.1:${srv.port}'),
+    );
+
+    final b = await service.getPrivateBalance(
+      privateAddress: privAddr.value,
+      spendPriv32: ctPriv,
+    );
+    expect(b.micro, 500000000, reason: 'CT 余额应为 2.0（解盲）+ 3.0（代理）RCPU');
+    expect(b.raw, '5.00000000');
+    // 客户端自算 nonce 命中，且已解出的输出被缓存。
+    expect(srv.requests['xctout']!.length, 1);
+    expect(srv.requests['rewind']!.length, 1);
+
+    final b2 = await service.getPrivateBalance(
+      privateAddress: privAddr.value,
+      spendPriv32: ctPriv,
+    );
+    expect(b2.micro, 500000000);
+    expect(srv.requests['rewind']!.length, 1, reason: '缓存命中后不应重复解盲');
   });
 }

@@ -17,7 +17,7 @@ final walletStateProvider =
   final bscRpc = ref.watch(bscRpcProvider);
   return WalletStateNotifier(
     WalletService(store),
-    NativeService(nativeRpc),
+    NativeService(nativeRpc, ctHelper: ref.watch(ctHelperProvider)),
     WrcpuService(bscRpc),
   );
 });
@@ -158,7 +158,7 @@ class WalletStateNotifier extends StateNotifier<WalletState> {
     }
 
     final results = await Future.wait([
-      guard('native', _nativeService.getBalance(addrs.plain.value)),
+      guard('native', _nativeBalance(addrs)),
       guard('wrcpu', _wrcpuService.getBalance(addrs.bsc.value)),
     ]);
     state = WalletState(
@@ -184,9 +184,32 @@ class WalletStateNotifier extends StateNotifier<WalletState> {
     }
 
     final results = await Future.wait([
-      guard('native', _nativeService.getBalance(addrs.plain.value)),
+      guard('native', _nativeBalance(addrs)),
       guard('wrcpu', _wrcpuService.getBalance(addrs.bsc.value)),
     ]);
     state = state.copyWith(balances: [results[0], results[1]]);
+  }
+
+  /// 原生 RCPU 余额 = 明文地址余额 + 隐私地址（`rcpux1`）CT 解盲余额。
+  ///
+  /// 链上 CT 输出金额在 `scantxoutset` 中读作 0，须本地解盲（见
+  /// [NativeService.getPrivateBalance]）。解盲不可用时降级为仅明文余额，
+  /// 避免「隐私余额为 0 且无任何说明」——宁可少报已解出的部分，也不整页报错。
+  Future<Balance> _nativeBalance(DerivedAddresses addrs) async {
+    final plain = await _nativeService.getBalance(addrs.plain.value);
+    try {
+      final ct = await _nativeService.getPrivateBalance(
+        privateAddress: addrs.private.value,
+        spendPriv32: await _service.deriveNativePrivateSpendPriv(),
+      );
+      final micro = plain.micro + ct.micro;
+      return Balance(
+        asset: 'native',
+        raw: (micro / 1e8).toStringAsFixed(8),
+        micro: micro,
+      );
+    } catch (_) {
+      return plain;
+    }
   }
 }
