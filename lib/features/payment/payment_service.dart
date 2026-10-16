@@ -153,8 +153,13 @@ class PaymentService {
     // 拉取 UTXO（测试可注入；生产走 get_utxos 代理）。
     // 可选输入：P2WPKH（BIP84 明文地址，链上实际形态）与
     // P2TR（测试/未来 taproot 地址）。
+    // amountMicro > 0：scantxoutset 对 CT 盲化输出读不出金额（返回 0），
+    // 混入输入会触发节点 -26 bad-txns-v2-spend-ct（非 CT 交易花 CT 输出）。
     final pool = (utxos ?? await nativeRpc.getUtxos(fromAddress))
-        .where((u) => u.confirmed && (u.isP2wpkhInput || u.isP2trInput))
+        .where((u) =>
+            u.confirmed &&
+            u.amountMicro > 0 &&
+            (u.isP2wpkhInput || u.isP2trInput))
         .toList()
       ..sort((a, b) => a.amountMicro.compareTo(b.amountMicro));
     if (pool.isEmpty) {
