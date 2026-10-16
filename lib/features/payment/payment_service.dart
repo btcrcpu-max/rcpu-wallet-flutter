@@ -417,7 +417,7 @@ class PaymentService {
     // BIP144 顺序：version || 0001(marker/flag) || vin||vout || witness || locktime。
     // helper 的 TX_NO_WITNESS 为 version||vin||vout||locktime，witness 必须插在
     // vout 与 locktime 之间，而非紧跟 version。
-    return version + '0001' + body + w.toString() + locktime;
+    return '${version}0001$body$w$locktime';
   }
 
   /// 解码 `rcpux1` 地址：返回内嵌 keyid（hex）与盲化公钥（压缩 33B hex）。

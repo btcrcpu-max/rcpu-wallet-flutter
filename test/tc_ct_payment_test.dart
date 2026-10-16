@@ -173,16 +173,15 @@ void main() {
   final recipient = Derivation(recipientMnemonic).deriveNativePrivateAddress();
 
   /// 假 helper 的「无 witness」交易：version || vin(1) || vout(3: 收款/找零/fee) || locktime。
-  final bodyHex = '01' +
-      _rep('11', 32) + // prev txid（内部字节序）
-      '00000000' + // vout 0
-      '00' + // scriptSig 空（P2WPKH）
-      'fdffffff' + // sequence
-      '03' +
-      ('0000000000000000' + '16' + '0014' + _rep('aa', 20)) + // 收款 CT 输出
-      ('0000000000000000' + '16' + '0014' + _rep('bb', 20)) + // 找零 CT 输出
-      ('0000000000000000' + '00'); // 显式 fee 输出（空脚本）
-  final noWitHex = '03000000' + bodyHex + '00000000';
+  final bodyHex = '01${_rep('11', 32)}' // prev txid（内部字节序）
+      '00000000' // vout 0
+      '00' // scriptSig 空（P2WPKH）
+      'fdffffff' // sequence
+      '03'
+      '000000000000000016' '0014${_rep('aa', 20)}' // 收款 CT 输出
+      '000000000000000016' '0014${_rep('bb', 20)}' // 找零 CT 输出
+      '000000000000000000'; // 显式 fee 输出（空脚本）
+  final noWitHex = '03000000${bodyHex}00000000';
 
   test('CT 收款：明文输入 → rcpux1 盲化输出 + 自身 CT 找零 + 本地签名拼接 witness', () async {
     final srv = _FakeCtServer();
@@ -254,8 +253,8 @@ void main() {
     expect(b.endsWith('00000000'), true);
     // witness 必须位于交易体（vin/vout）之后、locktime 之前。
     final inner = b.substring(12, b.length - 8);
-    expect(inner.endsWith(bodyHex), true, reason: 'vin/vout 体应紧跟 marker/flag');
-    final witHex = inner.substring(0, inner.length - bodyHex.length);
+    expect(inner.startsWith(bodyHex), true, reason: 'vin/vout 体应紧跟 marker/flag');
+    final witHex = inner.substring(bodyHex.length);
     // 单输入栈：项数 2 = [签名, 压缩公钥]；公钥为栈末项（0x21 = 33 字节）。
     expect(witHex.startsWith('02'), true);
     expect(witHex.endsWith('21$plainPubHex'), true); // P2WPKH witness 含签名者公钥

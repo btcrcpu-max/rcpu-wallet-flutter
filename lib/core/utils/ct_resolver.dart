@@ -48,8 +48,11 @@ Uint8List ecdhSharedX(Uint8List priv32, Uint8List compressedPub33) {
   final domain = ECCurve_secp256k1();
   final d = _bytesToBigInt(priv32);
   final q = domain.curve.decodePoint(compressedPub33);
+  if (q == null) throw const FormatException('公钥不是有效曲线点');
   final shared = q * d;
-  if (shared.isInfinity) throw const FormatException('ECDH 结果无效');
+  if (shared == null || shared.isInfinity) {
+    throw const FormatException('ECDH 结果无效');
+  }
   return _bigIntTo32(shared.x!.toBigInteger()!);
 }
 
