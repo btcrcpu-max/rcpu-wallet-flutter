@@ -227,8 +227,9 @@ void main() {
       expect(rpc.lastBroadcastHex, isNull);
     });
 
-    test('无 P2TR 可签名输入（仅明文 P2WPKH 锁定）→ 明确失败', () async {
-      // P2WPKH 脚本对输入侧不可签（签名侧仅支持 P2TR key-path）
+    test('明文 P2WPKH 输入 → 成功构造签名广播（BIP143/ECDSA 路径）', () async {
+      // P2WPKH（0x00 0x14 || h160）为 BIP84 明文地址的链上实际形态，
+      // v0.3.6 起与 P2TR 并列为可签名输入。
       final p2wpkhSpk = '0014${'11' * 20}';
       final rpc = _RecordingNativeRpc([
         utxo(150000000, p2wpkhSpk),
@@ -245,9 +246,9 @@ void main() {
         assetType: 'native',
         fromAddress: plainAddress.value,
       );
-      expect(result.ok, false);
-      expect(result.error, contains('没有可花费的 P2TR UTXO'));
-      expect(rpc.lastBroadcastHex, isNull);
+      expect(result.ok, true);
+      expect(result.txid, isNotNull);
+      expect(rpc.lastBroadcastHex, isNotNull);
     });
 
     test('锁定后未确认输出不可花费（confirmed=false 被过滤）', () async {
@@ -272,7 +273,7 @@ void main() {
         fromAddress: plainAddress.value,
       );
       expect(result.ok, false);
-      expect(result.error, contains('没有可花费的 P2TR UTXO'));
+      expect(result.error, contains('没有可花费的 P2WPKH/P2TR UTXO'));
       expect(rpc.lastBroadcastHex, isNull);
     });
   });

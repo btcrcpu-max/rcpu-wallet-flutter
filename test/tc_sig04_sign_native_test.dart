@@ -105,11 +105,13 @@ void main() {
       );
     });
 
-    test('非 P2TR prevout 脚本 → 抛格式错误', () async {
+    test('非 P2TR/P2WPKH prevout 脚本 → 抛格式错误', () async {
       final tx = buildSpendTx();
       final txHex = NativeTxCodec.bytesToHex(tx.serialize());
+      // 真正不受支持的脚本形态：legacy P2PKH（76 a9 14 <h160> 88 ac）。
       final bad = NativePrevOut(
-        scriptPubKey: Uint8List.fromList([0x00, 0x14, ...List.filled(20, 1)]), // P2PKH
+        scriptPubKey: Uint8List.fromList(
+            [0x76, 0xa9, 0x14, ...List.filled(20, 1), 0x88, 0xac]),
         amount: BigInt.from(100000000),
       );
       expect(
