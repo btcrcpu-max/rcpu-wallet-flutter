@@ -68,6 +68,28 @@ class NativeRpcClient {
         }),
       );
     } on DioException catch (e) {
+      // rcpud 对未知方法返回非 2xx（实测 404）但 body 仍携带标准
+      // JSON-RPC error；优先透传 body 中的 error.code/message，
+      // 否则 -32601 Method not found 被包装成「HTTP 404」，
+      // 上层 _isMethodNotFound 回退逻辑（scantxoutset）永不触发。
+      final respData = e.response?.data;
+      Map<String, dynamic>? errMap;
+      if (respData is Map<String, dynamic> && respData['error'] is Map) {
+        errMap = (respData['error'] as Map).cast<String, dynamic>();
+      } else if (respData is String) {
+        try {
+          final parsed = jsonDecode(respData);
+          if (parsed is Map && parsed['error'] is Map) {
+            errMap = (parsed['error'] as Map).cast<String, dynamic>();
+          }
+        } catch (_) {/* 非 JSON，走通用分支 */}
+      }
+      if (errMap != null) {
+        throw RpcException(
+          (errMap['code'] as num?)?.toInt() ?? -32603,
+          (errMap['message'] as String?) ?? 'RPC error',
+        );
+      }
       // 网络层错误（超时 / 连接拒绝 / DNS / HTTP 状态码异常）转为可读信息，
       // 供首页同步状态与余额降级提示区分「节点未连接」与「余额为 0」。
       final detail = e.message ?? e.type.toString();
