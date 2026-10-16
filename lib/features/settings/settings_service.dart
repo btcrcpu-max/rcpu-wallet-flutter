@@ -1,4 +1,5 @@
 import '../../core/biometric/biometric_auth.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/secure_store/secure_store.dart';
 
 /// 设置服务：指纹开关、地址管理、导出助记词、网络切换。
@@ -12,7 +13,7 @@ class SettingsService {
 
   /// 导出助记词（需二次生物识别确认）。
   Future<String?> exportMnemonic() async {
-    final ok = await _biometric.authenticate(reason: '请验证身份以导出助记词');
+    final ok = await _biometric.authenticate(reason: AppStrings.current.exportMnReason);
     if (!ok) return null;
     return _store.readMnemonic();
   }

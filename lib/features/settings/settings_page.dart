@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/di.dart';
+import '../../core/l10n/app_strings.dart';
 import '../wallet/wallet_state.dart';
 
 /// 设置页。
@@ -33,13 +34,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       setState(() {
         _bioEnabled = enabled;
       });
+      final s = ref.read(appStringsProvider);
       if (!available) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('当前设备不支持生物识别')),
+          SnackBar(content: Text(s.bioUnsupported)),
         );
       } else if (!hasEnrolled) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('系统未录入指纹/人脸，请先在系统设置中添加')),
+          SnackBar(content: Text(s.bioNotEnrolled)),
         );
       }
     }
@@ -47,13 +49,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Future<void> _toggleBio(bool value) async {
     final bio = ref.read(biometricAuthProvider);
+    final s = ref.read(appStringsProvider);
     if (value) {
       // 先检测设备支持情况
       final available = await bio.isAvailable();
       if (!available) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('当前设备不支持生物识别')),
+            SnackBar(content: Text(s.bioUnsupported)),
           );
         }
         return;
@@ -62,21 +65,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       if (!hasEnrolled) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('系统未录入指纹/人脸，请先在系统设置中添加')),
+            SnackBar(content: Text(s.bioNotEnrolled)),
           );
         }
         return;
       }
 
       setState(() => _bioLoading = true);
-      final ok = await bio.authenticate(reason: '开启生物识别以解锁钱包');
+      final ok = await bio.authenticate(reason: s.bioEnableReason);
       setState(() => _bioLoading = false);
       if (ok) {
         await bio.setEnabled(true);
         if (mounted) setState(() => _bioEnabled = true);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('生物识别验证失败')),
+          SnackBar(content: Text(s.bioFailed)),
         );
       }
     } else {
@@ -89,20 +92,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _copyAddress(String text, String label) async {
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
+    final s = ref.read(appStringsProvider);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label已复制')),
+      SnackBar(content: Text(s.copiedLabel(label))),
     );
   }
 
   Future<void> _exportMnemonic() async {
     final bio = ref.read(biometricAuthProvider);
+    final s = ref.read(appStringsProvider);
     // 备份必须验证身份（指纹/人脸或设备锁屏密码），
     // 与「生物识别」开关状态无关。
-    final ok = await bio.authenticate(reason: '验证身份以导出助记词');
+    final ok = await bio.authenticate(reason: s.exportMnReason);
     if (!ok) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('身份验证失败，无法导出助记词')),
+          SnackBar(content: Text(s.authFailedNoExport)),
         );
       }
       return;
@@ -114,7 +119,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     if (mnemonic == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('未找到钱包数据')),
+        SnackBar(content: Text(s.noWalletData)),
       );
       return;
     }
@@ -122,32 +127,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     await Clipboard.setData(ClipboardData(text: mnemonic));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('助记词已复制到剪贴板')),
+      SnackBar(content: Text(s.mnemonicCopied)),
     );
   }
 
   /// 退出当前钱包：二次确认 + 身份验证后清除本机助记词，
   /// 回到创建/导入页，可创建或导入其他钱包。
   Future<void> _logout() async {
+    final s = ref.read(appStringsProvider);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('退出当前钱包'),
-        content: const Text(
-          '退出将删除本机保存的助记词并清空钱包数据。\n\n'
-          '请确认你已备份助记词，否则资产将无法恢复！',
-        ),
+        title: Text(s.logoutTitle),
+        content: Text(s.logoutContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text(s.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('我已备份，退出'),
+            child: Text(s.logoutConfirm),
           ),
         ],
       ),
@@ -156,11 +159,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     // 退出删除数据前同样要求身份验证。
     final bio = ref.read(biometricAuthProvider);
-    final ok = await bio.authenticate(reason: '验证身份以退出钱包');
+    final ok = await bio.authenticate(reason: s.logoutReason);
     if (!ok) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('身份验证失败，已取消退出')),
+          SnackBar(content: Text(s.authFailedLogoutCancelled)),
         );
       }
       return;
@@ -173,58 +176,98 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (mounted) context.go('/wallet');
   }
 
+  /// 语言选择弹窗：跟随系统 / 中文 / English。
+  Future<void> _pickLanguage() async {
+    final s = ref.read(appStringsProvider);
+    final current = ref.read(languageSelectionProvider);
+    final picked = await showDialog<AppLanguage>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(s.language),
+        children: [
+          for (final opt in [
+            (AppLanguage.system, s.langSystem),
+            (AppLanguage.zh, s.langZh),
+            (AppLanguage.en, s.langEn),
+          ])
+            ListTile(
+              title: Text(opt.$2),
+              trailing: current == opt.$1 ? const Icon(Icons.check) : null,
+              onTap: () => Navigator.pop(ctx, opt.$1),
+            ),
+        ],
+      ),
+    );
+    if (picked != null) {
+      await ref.read(languageSelectionProvider.notifier).setLanguage(picked);
+    }
+  }
+
+  String _languageLabel(AppStrings s, AppLanguage sel) {
+    switch (sel) {
+      case AppLanguage.zh:
+        return s.langZh;
+      case AppLanguage.en:
+        return s.langEn;
+      case AppLanguage.system:
+        return s.langSystem;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final wallet = ref.watch(walletStateProvider);
+    final s = ref.watch(appStringsProvider);
+    final langSel = ref.watch(languageSelectionProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('设置')),
+      appBar: AppBar(title: Text(s.navSettings)),
       body: ListView(
         children: [
           if (wallet.isReady && wallet.addresses != null) ...[
-            _SettingsSection(title: '地址管理', children: [
+            _SettingsSection(title: s.addressManagement, children: [
               ListTile(
                 leading: const Icon(Icons.key),
-                title: const Text('明文地址'),
+                title: Text(s.plainAddress),
                 subtitle: SelectableText(wallet.addresses!.plain.toString()),
                 trailing: IconButton(
                   icon: const Icon(Icons.copy),
                   onPressed: () => _copyAddress(
                     wallet.addresses!.plain.toString(),
-                    '明文地址',
+                    s.plainAddress,
                   ),
                 ),
               ),
               ListTile(
                 leading: const Icon(Icons.visibility_off),
-                title: const Text('隐私地址'),
+                title: Text(s.privateAddress),
                 subtitle: SelectableText(wallet.addresses!.private.toString()),
                 trailing: IconButton(
                   icon: const Icon(Icons.copy),
                   onPressed: () => _copyAddress(
                     wallet.addresses!.private.toString(),
-                    '隐私地址',
+                    s.privateAddress,
                   ),
                 ),
               ),
               ListTile(
                 leading: const Icon(Icons.currency_exchange),
-                title: const Text('BSC 地址'),
+                title: Text(s.bscAddress),
                 subtitle: SelectableText(wallet.addresses!.bsc.toString()),
                 trailing: IconButton(
                   icon: const Icon(Icons.copy),
                   onPressed: () => _copyAddress(
                     wallet.addresses!.bsc.toString(),
-                    'BSC 地址',
+                    s.bscAddress,
                   ),
                 ),
               ),
             ]),
           ],
-          _SettingsSection(title: '安全', children: [
+          _SettingsSection(title: s.security, children: [
             ListTile(
               leading: const Icon(Icons.fingerprint),
-              title: const Text('生物识别'),
+              title: Text(s.biometric),
               trailing: _bioLoading
                   ? const SizedBox(
                       width: 24,
@@ -235,34 +278,43 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             ListTile(
               leading: const Icon(Icons.backup),
-              title: const Text('导出助记词'),
+              title: Text(s.exportMnemonic),
               trailing: const Icon(Icons.chevron_right),
               onTap: _exportMnemonic,
             ),
           ]),
-          const _SettingsSection(title: '网络', children: [
+          _SettingsSection(title: s.language, children: [
             ListTile(
-              leading: Icon(Icons.network_check),
-              title: Text('RPC 节点'),
-              subtitle: Text('原生: http://207.57.129.188/rpc | BSC: 公共节点'),
-              trailing: Icon(Icons.chevron_right),
+              leading: const Icon(Icons.language),
+              title: Text(s.language),
+              subtitle: Text(_languageLabel(s, langSel)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickLanguage,
             ),
           ]),
-          const _SettingsSection(title: '关于', children: [
+          _SettingsSection(title: s.network, children: [
             ListTile(
-              leading: Icon(Icons.info),
-              title: Text('版本'),
-              subtitle: Text('v0.3.8'),
+              leading: const Icon(Icons.network_check),
+              title: Text(s.rpcNode),
+              subtitle: Text(s.rpcNodeValue),
+              trailing: const Icon(Icons.chevron_right),
             ),
           ]),
-          _SettingsSection(title: '钱包', children: [
+          _SettingsSection(title: s.about, children: [
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: Text(s.version),
+              subtitle: const Text('v0.3.9'),
+            ),
+          ]),
+          _SettingsSection(title: s.walletSection, children: [
             ListTile(
               leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
               title: Text(
-                '退出 / 切换钱包',
+                s.logoutSwitch,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
-              subtitle: const Text('删除本机钱包数据，返回创建/导入页'),
+              subtitle: Text(s.logoutHint),
               onTap: _logout,
             ),
           ]),

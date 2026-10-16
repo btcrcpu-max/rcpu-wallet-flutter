@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/router.dart';
 import 'app/theme.dart';
+import 'core/l10n/app_strings.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,8 +17,9 @@ class RcpuWalletApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    final s = ref.watch(appStringsProvider);
     return MaterialApp.router(
-      title: 'RCPU 钱包',
+      title: s.appTitle,
       theme: buildAppTheme(),
       routerConfig: router,
       debugShowCheckedModeBanner: false,

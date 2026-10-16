@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart' hide Address;
 
+import '../../core/l10n/app_strings.dart';
 import '../../core/models/address.dart';
 import '../../core/qr/qr_scanner.dart';
 
@@ -31,7 +32,7 @@ class _ScanPageState extends State<ScanPage> {
       if (_lastRejected != text) {
         _lastRejected = text;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('无法识别的二维码内容，已忽略')),
+          SnackBar(content: Text(AppStrings.current.qrUnrecognized)),
         );
       }
       return;
@@ -51,8 +52,9 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.current;
     return Scaffold(
-      appBar: AppBar(title: const Text('扫描收款码')),
+      appBar: AppBar(title: Text(s.scanTitle)),
       body: Stack(
         children: [
           MobileScanner(
@@ -61,7 +63,7 @@ class _ScanPageState extends State<ScanPage> {
               // 展示真实错误码，便于区分权限拒绝 / 相机被占用 /
               // ML Kit 初始化失败等不同根因（统一文案会误导排查）。
               final detail = StringBuffer()
-                ..write('错误码: ${error.errorCode}')
+                ..write('${s.errorCodeLabel}: ${error.errorCode}')
                 ..write('\n${error.errorDetails?.message ?? ''}');
               return Center(
                 child: Padding(
@@ -75,8 +77,8 @@ class _ScanPageState extends State<ScanPage> {
                         color: Theme.of(context).colorScheme.outline,
                       ),
                       const SizedBox(height: 12),
-                      const Text('相机启动失败',
-                          style: TextStyle(
+                      Text(s.cameraStartFailed,
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       Text(
@@ -85,15 +87,15 @@ class _ScanPageState extends State<ScanPage> {
                         style: const TextStyle(fontSize: 12),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        '若错误码为 permissionDenied：设置 → 应用 → rcpu_wallet → 权限 → 相机，选择「允许」后返回重试。',
+                      Text(
+                        s.cameraPermissionHint,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
                       OutlinedButton.icon(
                         onPressed: () => Navigator.of(context).maybePop(),
                         icon: const Icon(Icons.arrow_back),
-                        label: const Text('返回'),
+                        label: Text(s.back),
                       ),
                     ],
                   ),
@@ -111,10 +113,10 @@ class _ScanPageState extends State<ScanPage> {
                 color: Colors.black54,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                '对准收款方二维码（支持 rcpu: 收款码或地址二维码）',
+              child: Text(
+                s.scanHint,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           ),

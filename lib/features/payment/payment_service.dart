@@ -5,6 +5,7 @@ import '../../core/crypto/bech32.dart';
 import '../../core/crypto/derivation.dart';
 import '../../core/crypto/native_tx.dart';
 import '../../core/crypto/signature.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/models/address.dart';
 import '../../core/models/native_utxo.dart';
 import '../../core/network/ct_helper_client.dart';
@@ -47,22 +48,22 @@ class PaymentService {
       case 'native':
         final addr = Address.parse(payment.address);
         if (!addr.isNative) {
-          throw const FormatException('原生付款地址必须为 rcpu1 / rcpux1');
+          throw FormatException(AppStrings.current.nativePayAddrPrefix);
         }
       case 'wrcpu':
         final addr = Address.parse(payment.address);
         if (!addr.isEvm) {
-          throw const FormatException('wRCPU 付款地址必须为 0x 开头');
+          throw FormatException(AppStrings.current.wrcpuPayAddrPrefix);
         }
       default:
-        throw const FormatException('不支持的资产类型');
+        throw FormatException(AppStrings.current.unsupportedAsset);
     }
     if (payment.amount != null) {
       if (!Amount.isValid(payment.amount!)) {
-        throw const FormatException('金额格式非法');
+        throw FormatException(AppStrings.current.amountInvalid);
       }
       if (payment.amount == '0') {
-        throw const FormatException('金额不能为 0');
+        throw FormatException(AppStrings.current.amountZero);
       }
     }
     return payment;
@@ -99,10 +100,10 @@ class PaymentService {
   }) async {
     // 1. 指纹验证
     final authOk = await biometric.authenticate(
-      reason: '确认支付 ${amountMicro / 1e8} RCPU',
+      reason: AppStrings.current.payConfirmReason('${amountMicro / 1e8}'),
     );
     if (!authOk) {
-      return const PaymentResult.fail('指纹验证失败');
+      return PaymentResult.fail(AppStrings.current.fingerprintFailed);
     }
 
     // 2. 构造 + 签名 + 广播（含降级）
@@ -140,11 +141,11 @@ class PaymentService {
       return PaymentResult.ok(txid);
     } on UnimplementedError {
       if (toAddress.startsWith('rcpux1')) {
-        return const PaymentResult.fail('隐私地址支付需 CT 代理（当前未配置）');
+        return PaymentResult.fail(AppStrings.current.ctProxyMissing);
       }
-      return const PaymentResult.fail('原生签名暂未实现，请稍后重试');
+      return PaymentResult.fail(AppStrings.current.nativeSignNotReady);
     } catch (e) {
-      return PaymentResult.fail('支付失败: $e');
+      return PaymentResult.fail(AppStrings.current.paymentFailed('$e'));
     }
   }
 
@@ -172,17 +173,17 @@ class PaymentService {
     if (helper == null) {
       throw UnimplementedError('CT 代理未配置');
     }
-    if (amountMicro <= 0) throw const FormatException('金额必须为正');
+    if (amountMicro <= 0) throw FormatException(AppStrings.current.amountMustBePositive);
     if (ctKeyHex == null || ctKeyHex.isEmpty) {
-      throw const FormatException('缺少隐私地址私钥（CT 找零/输入需 m/84\'/1\'/0\'/1/0）');
+      throw FormatException(AppStrings.current.missingCtKey);
     }
     if (privateAddress == null || privateAddress.isEmpty) {
-      throw const FormatException('缺少隐私地址（CT 找零接收方）');
+      throw FormatException(AppStrings.current.missingPrivateAddress);
     }
     final plainKey = _hexBytes(plainKeyHex);
-    if (plainKey.length != 32) throw const FormatException('明文私钥须为 32 字节 hex');
+    if (plainKey.length != 32) throw FormatException(AppStrings.current.plainKeyLen);
     final ctKey = _hexBytes(ctKeyHex);
-    if (ctKey.length != 32) throw const FormatException('隐私私钥须为 32 字节 hex');
+    if (ctKey.length != 32) throw FormatException(AppStrings.current.ctKeyLen);
 
     // 收款方输出：rcpux1 内嵌 keyid -> P2WPKH 脚本；公钥 -> 盲化目标。
     final recipient = _decodePrivateAddress(to.value);
@@ -217,7 +218,7 @@ class PaymentService {
       ...ctPool,
     ]..sort((a, b) => a.amountMicro.compareTo(b.amountMicro));
     if (candidates.isEmpty) {
-      throw StateError('没有可花费的原生 UTXO（余额不足或未同步）');
+      throw StateError(AppStrings.current.noSpendableUtxo);
     }
 
     // 3) UTXO 选择（最小足够集合，按「金额 + 保守手续费」凑足）。
@@ -232,8 +233,8 @@ class PaymentService {
     }
     var reservedFee = _estimateCtFee(selected.length, feeRateMicroPerByte);
     if (total < amountMicro + reservedFee) {
-      throw StateError('余额不足：可用 ${Amount.fromMicro(total)} RCPU，'
-          '需 ${Amount.fromMicro(amountMicro)} + 手续费');
+      throw StateError(AppStrings.current.insufficient(
+          Amount.fromMicro(total), Amount.fromMicro(amountMicro)));
     }
 
     // 4) 构造（找零 CT）；手续费由输入的显式输出补足。
@@ -255,7 +256,7 @@ class PaymentService {
     if (neededFee > reservedFee) {
       reservedFee = neededFee;
       change = total - amountMicro - reservedFee;
-      if (change < 0) throw StateError('余额不足（含手续费）');
+      if (change < 0) throw StateError(AppStrings.current.insufficientWithFee);
       outputs = _ctOutputs(
         recipientScriptHex: recipientScriptHex,
         recipientBlindingHex: recipient.blindingPubHex,
@@ -269,13 +270,13 @@ class PaymentService {
           built.txNoWitnessHex, selected.length, feeRateMicroPerByte);
       if (reNeeded > reservedFee) {
         // 罕见的 range proof 尺寸波动导致仍不足：fail-closed，避免广播欠费交易。
-        throw StateError('手续费估算不足，请重试');
+        throw StateError(AppStrings.current.feeUnderestimated);
       }
     }
 
     // 6) 逐输入签名（明文输入用明文私钥，CT 输入用隐私私钥），拼 witness。
     if (built.vin != selected.length) {
-      throw StateError('CT 构造返回的输入数不一致');
+      throw StateError(AppStrings.current.ctInputMismatch);
     }
     final stacks = <List<Uint8List>>[];
     for (var i = 0; i < selected.length; i++) {
@@ -401,7 +402,7 @@ class PaymentService {
   static String _spliceWitness(
       String noWitnessHex, List<List<Uint8List>> stacks) {
     if (noWitnessHex.length < 16) {
-      throw const FormatException('CT 交易 hex 过短');
+      throw FormatException(AppStrings.current.ctHexTooShort);
     }
     final version = noWitnessHex.substring(0, 8);
     final locktime = noWitnessHex.substring(noWitnessHex.length - 8);
@@ -427,15 +428,15 @@ class PaymentService {
       String address) {
     final payload = Bech32.decodeToBytes(address.toLowerCase(), isBech32m: true);
     if (payload.length != 54 || payload[0] != 0x00) {
-      throw const FormatException('隐私地址 payload 非法（应为 0x00||keyid||pub）');
+      throw FormatException(AppStrings.current.ctPayloadInvalid);
     }
     final keyid = payload.sublist(1, 21);
     final pub = payload.sublist(21, 54);
     if (pub[0] != 2 && pub[0] != 3) {
-      throw const FormatException('隐私地址公钥非法（须为压缩点）');
+      throw FormatException(AppStrings.current.ctPubInvalid);
     }
     if (!_bytesEqual(Derivation.hash160(pub), keyid)) {
-      throw const FormatException('隐私地址 keyid 与公钥不匹配');
+      throw FormatException(AppStrings.current.ctKeyidMismatch);
     }
     return (keyidHex: _hex(keyid), blindingPubHex: _hex(pub));
   }
@@ -463,21 +464,21 @@ class PaymentService {
     required int feeRateMicroPerByte,
   }) async {
     if (amountMicro <= 0) {
-      throw const FormatException('金额必须为正');
+      throw FormatException(AppStrings.current.amountMustBePositive);
     }
     final to = Address.parse(toAddress);
     if (to.isPrivate) {
       throw UnimplementedError('隐私收款需 CT 盲化回填');
     }
     if (!to.isPlain) {
-      throw const FormatException('仅支持原生明文收款地址');
+      throw FormatException(AppStrings.current.onlyPlainRecv);
     }
     if (fromAddress == null || fromAddress.isEmpty) {
-      throw const FormatException('缺少付款地址（fromAddress）');
+      throw FormatException(AppStrings.current.missingFromAddress);
     }
     final change = Address.parse(changeAddress ?? fromAddress);
     if (!change.isPlain) {
-      throw const FormatException('找零地址须为明文 rcpu1（当前不支持 CT 找零）');
+      throw FormatException(AppStrings.current.changeMustBePlain);
     }
 
     // 拉取 UTXO（测试可注入；生产走 get_utxos 代理）。
@@ -491,7 +492,7 @@ class PaymentService {
         .toList()
       ..sort((a, b) => a.amountMicro.compareTo(b.amountMicro));
     if (pool.isEmpty) {
-      throw StateError('没有可花费的 P2WPKH/P2TR UTXO（余额不足或未同步）');
+      throw StateError(AppStrings.current.noSpendableP2wpkh);
     }
 
     final toScript = _p2wpkhScript(to);
@@ -509,8 +510,8 @@ class PaymentService {
     }
     var fee = _estimateFee(selected.length, assumedOutputs, feeRateMicroPerByte);
     if (total < BigInt.from(amountMicro) + BigInt.from(fee)) {
-      throw StateError('余额不足：可用 ${Amount.fromMicro(total.toInt())} RCPU，'
-          '需 ${Amount.fromMicro(amountMicro)} + 手续费');
+      throw StateError(AppStrings.current.insufficient(
+          Amount.fromMicro(total.toInt()), Amount.fromMicro(amountMicro)));
     }
 
     // 2) 输出构造（找零差额归 fee；无找零时输出数收敛为 1）。
@@ -527,7 +528,7 @@ class PaymentService {
       // 无找零：fee = total - amount（全部视为手续费，需为正）
       final actualFee = total - BigInt.from(amountMicro);
       if (actualFee < BigInt.zero) {
-        throw StateError('余额不足（含手续费）');
+        throw StateError(AppStrings.current.insufficientWithFee);
       }
       fee = actualFee.toInt();
       changeMicro = BigInt.zero;
@@ -570,7 +571,7 @@ class PaymentService {
   Uint8List _p2wpkhScript(Address addr) {
     final w = Bech32.decodeWitness(addr.value);
     if (w.version != 0 || w.program.length != 20) {
-      throw const FormatException('明文地址须为 witness v0 P2WPKH（20B program）');
+      throw FormatException(AppStrings.current.plainMustBeV0);
     }
     return Uint8List.fromList([0x00, 0x14, ...w.program]);
   }
@@ -603,7 +604,7 @@ class PaymentService {
 
   static Uint8List _hexBytes(String hex) {
     final h = hex.trim().startsWith('0x') ? hex.trim().substring(2) : hex.trim();
-    if (h.length.isOdd) throw const FormatException('hex 长度必须为偶数');
+    if (h.length.isOdd) throw FormatException(AppStrings.current.hexOdd);
     if (h.isEmpty) return Uint8List(0);
     return Uint8List.fromList(List.generate(
         h.length ~/ 2, (i) => int.parse(h.substring(i * 2, i * 2 + 2), radix: 16)));

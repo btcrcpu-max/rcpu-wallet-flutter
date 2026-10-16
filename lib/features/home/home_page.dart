@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../../core/models/balance.dart';
 import '../native/node_sync.dart';
 import '../receive/receive_page.dart';
@@ -25,6 +26,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final wallet = ref.watch(walletStateProvider);
+    final s = ref.watch(appStringsProvider);
     // 区块高度推进时自动刷新余额（新块可能包含本地址入账）。
     ref.listen<NodeSyncStatus>(nodeSyncProvider, (prev, next) {
       if (next.connected &&
@@ -50,11 +52,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabIndex,
         onDestinationSelected: _switchTab,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: '首页'),
-          NavigationDestination(icon: Icon(Icons.qr_code_outlined), selectedIcon: Icon(Icons.qr_code), label: '收款'),
-          NavigationDestination(icon: Icon(Icons.send_outlined), selectedIcon: Icon(Icons.send), label: '付款'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: '设置'),
+        destinations: [
+          NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: s.navHome),
+          NavigationDestination(icon: const Icon(Icons.qr_code_outlined), selectedIcon: const Icon(Icons.qr_code), label: s.navReceive),
+          NavigationDestination(icon: const Icon(Icons.send_outlined), selectedIcon: const Icon(Icons.send), label: s.navSend),
+          NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: s.navSettings),
         ],
       ),
     );
@@ -71,6 +73,7 @@ class _HomeTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final s = ref.watch(appStringsProvider);
 
     return SafeArea(
       child: RefreshIndicator(
@@ -88,7 +91,7 @@ class _HomeTab extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('RCPU 钱包', style: theme.textTheme.titleLarge),
+              Text(s.appTitle, style: theme.textTheme.titleLarge),
               const _SyncChip(),
             ],
           ),
@@ -100,7 +103,7 @@ class _HomeTab extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('总资产', style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant)),
+                  Text(s.totalAssets, style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 8),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -112,7 +115,7 @@ class _HomeTab extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text('≈ 联调后获取实时价格', style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.outline)),
+                  Text(s.pricePending, style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.outline)),
                 ],
               ),
             ),
@@ -123,14 +126,14 @@ class _HomeTab extends ConsumerWidget {
             icon: Icons.account_balance_wallet,
             iconColor: colorScheme.primary,
             assetName: 'RCPU',
-            subtitle: '原生资产',
+            subtitle: s.nativeAsset,
             balance: wallet.balanceOf('native') ?? Balance.zero('native'),
           ),
           _AssetCard(
             icon: Icons.currency_exchange,
             iconColor: colorScheme.tertiary,
             assetName: 'wRCPU',
-            subtitle: 'BSC 包装资产',
+            subtitle: s.wrappedAsset,
             balance: wallet.balanceOf('wrcpu') ?? Balance.zero('wrcpu'),
           ),
           const SizedBox(height: 24),
@@ -141,7 +144,7 @@ class _HomeTab extends ConsumerWidget {
                 child: FilledButton.icon(
                   onPressed: () => onQuickAction(1), // 收款
                   icon: const Icon(Icons.qr_code),
-                  label: const Text('收款'),
+                  label: Text(s.receive),
                 ),
               ),
               const SizedBox(width: 12),
@@ -149,7 +152,7 @@ class _HomeTab extends ConsumerWidget {
                 child: FilledButton.icon(
                   onPressed: () => onQuickAction(2), // 付款
                   icon: const Icon(Icons.send),
-                  label: const Text('付款'),
+                  label: Text(s.send),
                 ),
               ),
             ],
@@ -160,7 +163,7 @@ class _HomeTab extends ConsumerWidget {
             child: OutlinedButton.icon(
               onPressed: () => onQuickAction(3), // 设置
               icon: const Icon(Icons.settings),
-              label: const Text('设置 / 网络'),
+              label: Text(s.settingsNetwork),
             ),
           ),
         ],
@@ -171,13 +174,14 @@ class _HomeTab extends ConsumerWidget {
 }
 
 /// 钱包未初始化引导（未创建/导入钱包时首页展示）。
-class _InitGuide extends StatelessWidget {
+class _InitGuide extends ConsumerWidget {
   final VoidCallback onCreate;
   const _InitGuide({required this.onCreate});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final s = ref.watch(appStringsProvider);
     return SafeArea(
       child: Center(
         child: Padding(
@@ -187,16 +191,16 @@ class _InitGuide extends StatelessWidget {
             children: [
               Icon(Icons.account_balance_wallet, size: 72, color: theme.colorScheme.primary),
               const SizedBox(height: 16),
-              Text('尚未创建钱包', style: theme.textTheme.titleLarge),
+              Text(s.noWallet, style: theme.textTheme.titleLarge),
               const SizedBox(height: 8),
-              Text('创建或导入钱包后即可收发 RCPU / wRCPU',
+              Text(s.noWalletHint,
                   style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   textAlign: TextAlign.center),
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: onCreate,
                 icon: const Icon(Icons.add),
-                label: const Text('创建 / 导入钱包'),
+                label: Text(s.createImportWallet),
               ),
             ],
           ),
@@ -270,12 +274,13 @@ class _SyncChip extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sync = ref.watch(nodeSyncProvider);
+    final s = ref.watch(appStringsProvider);
     final theme = Theme.of(context);
     final color =
         sync.connected ? Colors.green : theme.colorScheme.error;
     final label = sync.connected
-        ? (sync.height != null ? '高度 ${sync.height}' : '已连接')
-        : '节点未连接';
+        ? (sync.height != null ? s.heightLabel(sync.height!) : s.connected)
+        : s.nodeDisconnected;
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -298,6 +303,7 @@ class _SyncChip extends ConsumerWidget {
   }
 
   void _showDetail(BuildContext context, WidgetRef ref, NodeSyncStatus sync) {
+    final s = ref.read(appStringsProvider);
     final updated = sync.updatedAt;
     final updatedText = updated == null
         ? '—'
@@ -307,18 +313,18 @@ class _SyncChip extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(sync.connected ? '节点已连接' : '节点未连接'),
+        title: Text(sync.connected ? s.nodeConnected : s.nodeDisconnected),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('端点: http://207.57.129.188/rpc'),
-            Text('区块高度: ${sync.height ?? '—'}'),
-            Text('更新时间: $updatedText'),
+            Text('${s.endpointLabel}: http://207.57.129.188/rpc'),
+            Text('${s.blockHeight}: ${sync.height ?? '—'}'),
+            Text('${s.updatedAt}: $updatedText'),
             if (!sync.connected && sync.error != null) ...[
               const SizedBox(height: 8),
               Text(
-                '原因: ${sync.error}',
+                '${s.reasonLabel}: ${sync.error}',
                 style: TextStyle(color: Theme.of(ctx).colorScheme.error),
               ),
             ],
@@ -331,11 +337,11 @@ class _SyncChip extends ConsumerWidget {
                 ref.read(nodeSyncProvider.notifier).refresh();
                 Navigator.of(ctx).pop();
               },
-              child: const Text('重试连接'),
+              child: Text(s.retry),
             ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('关闭'),
+            child: Text(s.close),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../core/l10n/app_strings.dart';
 import '../../core/models/address.dart';
 import '../wallet/wallet_state.dart';
 
@@ -29,11 +30,12 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
     final wallet = ref.watch(walletStateProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final s = ref.watch(appStringsProvider);
 
     if (!wallet.isReady) {
       return Scaffold(
-        appBar: AppBar(title: const Text('收款')),
-        body: const Center(child: Text('钱包未初始化')),
+        appBar: AppBar(title: Text(s.navReceive)),
+        body: Center(child: Text(s.walletNotInit)),
       );
     }
 
@@ -41,18 +43,18 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
     final uri = _buildUri(addr, _amountController.text);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('收款')),
+      appBar: AppBar(title: Text(s.navReceive)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: false, label: Text('明文 rcpu1')),
-                ButtonSegment(value: true, label: Text('隐私 rcpux1')),
+              segments: [
+                ButtonSegment(value: false, label: Text(s.plainSeg)),
+                ButtonSegment(value: true, label: Text(s.privateSeg)),
               ],
               selected: {_isPrivate},
-              onSelectionChanged: (s) => setState(() => _isPrivate = s.first),
+              onSelectionChanged: (v) => setState(() => _isPrivate = v.first),
             ),
             const SizedBox(height: 20),
             Center(
@@ -75,14 +77,14 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
                   addr.toString(),
                   style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'monospace'),
                 ),
-                subtitle: Text(_isPrivate ? '隐私地址（推荐收款）' : '明文地址（仅限桥存款）'),
+                subtitle: Text(_isPrivate ? s.privateAddrHint : s.plainAddrHint),
                 trailing: IconButton(
                   icon: const Icon(Icons.copy),
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: addr.toString()));
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('地址已复制')),
+                        SnackBar(content: Text(s.addressCopied)),
                       );
                     }
                   },
@@ -93,16 +95,16 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
             TextField(
               controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: '金额（可选）',
+              decoration: InputDecoration(
+                labelText: s.amountOptional,
                 suffixText: 'RCPU',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
             Text(
-              '支付协议: $uri',
+              '${s.paymentProtocol}: $uri',
               style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.outline),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

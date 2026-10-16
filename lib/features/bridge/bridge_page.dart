@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/l10n/app_strings.dart';
 import '../wallet/wallet_service.dart';
 import '../wallet/wallet_state.dart';
 
@@ -11,11 +12,12 @@ class BridgePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final wallet = ref.watch(walletStateProvider);
+    final s = ref.watch(appStringsProvider);
 
     if (!wallet.isReady) {
       return Scaffold(
-        appBar: AppBar(title: const Text('跨链')),
-        body: const Center(child: Text('钱包未初始化')),
+        appBar: AppBar(title: Text(s.bridgeTitle)),
+        body: Center(child: Text(s.walletNotInit)),
       );
     }
 
@@ -23,11 +25,11 @@ class BridgePage extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('跨链桥'),
-          bottom: const TabBar(
+          title: Text(s.bridgeTitle),
+          bottom: TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.arrow_downward), text: '铸造'),
-              Tab(icon: Icon(Icons.arrow_upward), text: '赎回'),
+              Tab(icon: const Icon(Icons.arrow_downward), text: s.mint),
+              Tab(icon: const Icon(Icons.arrow_upward), text: s.redeem),
             ],
           ),
         ),
@@ -49,6 +51,7 @@ class _DepositTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.current;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -58,13 +61,13 @@ class _DepositTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('铸造 wRCPU', style: theme.textTheme.titleMedium),
+                Text(s.mintWrcpu, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 8),
-                Text('1. 向桥专属地址存入原生 RCPU（明文地址）', style: theme.textTheme.bodyMedium),
-                Text('2. 累计满 10 RCPU 后自动铸造 wRCPU 到 BSC 地址', style: theme.textTheme.bodyMedium),
+                Text(s.mintStep1, style: theme.textTheme.bodyMedium),
+                Text(s.mintStep2, style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 12),
                 SelectableText(
-                  '专属存款地址: ${addresses.plain.toString()}',
+                  s.depositAddress(addresses.plain.toString()),
                   style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'monospace'),
                 ),
               ],
@@ -76,11 +79,11 @@ class _DepositTab extends StatelessWidget {
           onPressed: () {
             // TODO: 桥联调后接入
           },
-          child: const Text('复制专属存款地址'),
+          child: Text(s.copyDepositAddress),
         ),
         const SizedBox(height: 8),
         Text(
-          '铸造进度: 0 / 10 RCPU（联调后获取实时进度）',
+          s.mintProgress,
           style: theme.textTheme.bodySmall,
         ),
       ],
@@ -95,6 +98,7 @@ class _RedeemTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.current;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -104,24 +108,24 @@ class _RedeemTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('赎回 RCPU', style: theme.textTheme.titleMedium),
+                Text(s.redeemRcpu, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 8),
-                Text('1. 在 BSC 上燃烧 wRCPU', style: theme.textTheme.bodyMedium),
-                Text('2. 指定收款地址为原生钱包地址', style: theme.textTheme.bodyMedium),
-                Text('3. 桥处理完成后 RCPU 直接到账', style: theme.textTheme.bodyMedium),
+                Text(s.redeemStep1, style: theme.textTheme.bodyMedium),
+                Text(s.redeemStep2, style: theme.textTheme.bodyMedium),
+                Text(s.redeemStep3, style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 12),
-                Text('收款地址: ${addresses.plain.toString()}', style: theme.textTheme.bodyLarge),
+                Text(s.receiveAddress(addresses.plain.toString()), style: theme.textTheme.bodyLarge),
               ],
             ),
           ),
         ),
         const SizedBox(height: 12),
-        const TextField(
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
+        TextField(
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-            labelText: '赎回数量',
+            labelText: s.redeemAmount,
             suffixText: 'wRCPU',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -129,7 +133,7 @@ class _RedeemTab extends StatelessWidget {
           onPressed: () {
             // TODO: 桥联调后接入
           },
-          child: const Text('确认赎回'),
+          child: Text(s.confirmRedeem),
         ),
       ],
     );

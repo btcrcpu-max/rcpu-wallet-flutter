@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/di.dart';
+import '../../core/l10n/app_strings.dart';
 import '../wallet/wallet_state.dart';
 
 /// 钱包初始化页：创建新钱包或导入助记词。
@@ -47,6 +48,7 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final s = ref.watch(appStringsProvider);
 
     if (_checking) {
       return const Scaffold(
@@ -64,21 +66,21 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
               const SizedBox(height: 40),
               Icon(Icons.account_balance_wallet, size: 64, color: colorScheme.primary),
               const SizedBox(height: 16),
-              Text('RCPU 钱包', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              Text(s.appTitle, style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
               const SizedBox(height: 8),
-              Text('原生 RCPU + BSC wRCPU 双链钱包', style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant), textAlign: TextAlign.center),
+              Text(s.appSubtitle, style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant), textAlign: TextAlign.center),
               const SizedBox(height: 40),
               if (_createdMnemonic == null && !_showImport) ...[
                 FilledButton.icon(
                   onPressed: _createWallet,
                   icon: const Icon(Icons.add),
-                  label: const Text('创建新钱包'),
+                  label: Text(s.createNewWallet),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: () => setState(() => _showImport = true),
                   icon: const Icon(Icons.download),
-                  label: const Text('导入已有钱包'),
+                  label: Text(s.importExisting),
                 ),
               ],
               if (_createdMnemonic != null) ...[
@@ -89,14 +91,14 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('请备份助记词', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                        Text(s.backupMnemonic, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         SelectableText(
                           _createdMnemonic!,
                           style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'monospace', fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 8),
-                        Text('⚠️ 助记词是恢复钱包的唯一凭证，请妥善保存，不要截图或发送给他人', style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.error)),
+                        Text(s.mnemonicWarning, style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.error)),
                       ],
                     ),
                   ),
@@ -104,27 +106,27 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: _enterWallet,
-                  child: const Text('我已备份，进入钱包'),
+                  child: Text(s.backedUpEnter),
                 ),
               ],
               if (_showImport) ...[
                 TextField(
                   controller: _importController,
                   maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: '助记词（12 个英文单词，空格分隔）',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: s.mnemonicLabel,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 FilledButton(
                   onPressed: _importWallet,
-                  child: const Text('导入钱包'),
+                  child: Text(s.importWallet),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => setState(() => _showImport = false),
-                  child: const Text('返回'),
+                  child: Text(s.back),
                 ),
               ],
             ],
@@ -148,7 +150,7 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
   Future<void> _importWallet() async {
     final mnemonic = _importController.text.trim();
     if (mnemonic.isEmpty) {
-      _showError('请输入助记词');
+      _showError(ref.read(appStringsProvider).enterMnemonic);
       return;
     }
     try {
@@ -166,6 +168,7 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
   /// 设备不支持时直接进入，不影响使用。
   Future<void> _enterWallet() async {
     final bio = ref.read(biometricAuthProvider);
+    final s = ref.read(appStringsProvider);
     try {
       final available = await bio.isAvailable();
       final enrolled = await bio.hasEnrolledBiometrics();
@@ -174,29 +177,26 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
         final enable = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('开启指纹/面容保护'),
-            content: const Text(
-              '建议开启生物识别保护钱包：\n'
-              '进入付款、导出助记词等敏感操作时将要求验证指纹/面容或锁屏密码。',
-            ),
+            title: Text(s.bioProtectTitle),
+            content: Text(s.bioProtectContent),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('暂不'),
+                child: Text(s.notNow),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('立即开启'),
+                child: Text(s.enableNow),
               ),
             ],
           ),
         );
         if (enable == true) {
-          final ok = await bio.authenticate(reason: '验证以开启生物识别保护');
+          final ok = await bio.authenticate(reason: s.bioEnableVerifyReason);
           if (ok) {
             await bio.setEnabled(true);
           } else if (mounted) {
-            _showError('验证失败，未开启生物识别（可稍后在设置中开启）');
+            _showError(s.bioEnableFailedHint);
           }
         }
       }

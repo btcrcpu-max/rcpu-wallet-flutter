@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/di.dart';
 import '../../core/crypto/derivation.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/models/address.dart';
 import '../../core/utils/amount.dart';
 import '../payment/payment_service.dart';
@@ -55,7 +56,7 @@ class _SendPageState extends ConsumerState<SendPage> {
           _error = null;
         });
       } catch (e) {
-        setState(() => _error = '二维码无效: $e');
+        setState(() => _error = AppStrings.current.invalidQr('$e'));
       }
       return;
     }
@@ -76,12 +77,13 @@ class _SendPageState extends ConsumerState<SendPage> {
 
   Future<void> _confirm() async {
     setState(() => _error = null);
+    final s = ref.read(appStringsProvider);
 
     final address = _addressCtrl.text.trim();
     final amount = _amountCtrl.text.trim();
 
     if (address.isEmpty || amount.isEmpty) {
-      setState(() => _error = '请填写地址和金额');
+      setState(() => _error = s.fillAddressAmount);
       return;
     }
 
@@ -89,31 +91,31 @@ class _SendPageState extends ConsumerState<SendPage> {
     try {
       final addr = Address.parse(address);
       if (_asset == 'native' && !addr.isNative) {
-        setState(() => _error = '原生资产收款地址须为 rcpu1 / rcpux1 开头');
+        setState(() => _error = s.nativeAddrPrefix);
         return;
       }
       if (_asset == 'wrcpu' && !addr.isEvm) {
-        setState(() => _error = 'wRCPU 收款地址须为 0x 开头');
+        setState(() => _error = s.wrcpuAddrPrefix);
         return;
       }
     } catch (e) {
-      setState(() => _error = '地址格式错误: $e');
+      setState(() => _error = s.addressInvalid('$e'));
       return;
     }
 
     // 金额校验
     if (!Amount.isValid(amount)) {
-      setState(() => _error = '金额格式非法');
+      setState(() => _error = s.amountInvalid);
       return;
     }
     if (amount == '0') {
-      setState(() => _error = '金额不能为 0');
+      setState(() => _error = s.amountZero);
       return;
     }
 
     // wRCPU 转账链路（BSC 合约调用）尚未接入，如实提示而非伪造成功。
     if (_asset == 'wrcpu') {
-      setState(() => _error = 'wRCPU 转账功能尚未开放，当前仅支持原生 RCPU');
+      setState(() => _error = s.wrcpuNotOpen);
       return;
     }
 
@@ -125,11 +127,11 @@ class _SendPageState extends ConsumerState<SendPage> {
       final wallet = ref.read(walletStateProvider);
       final addresses = wallet.addresses;
       if (addresses == null) {
-        failure = '钱包未解锁';
+        failure = s.walletLocked;
       } else {
         final mnemonic = await ref.read(secureStoreProvider).readMnemonic();
         if (mnemonic == null) {
-          failure = '钱包未初始化';
+          failure = s.walletNotInit;
         } else {
           // 明文路径花费私钥（m/84'/1'/0'/0/0），与 plain 地址对应；
           // 隐私路径私钥（m/84'/1'/0'/1/0）供 CT 收款盲化/找零与自身 CT 输出解盲。
@@ -156,7 +158,7 @@ class _SendPageState extends ConsumerState<SendPage> {
         }
       }
     } catch (e) {
-      failure = '支付失败: $e';
+      failure = s.paymentFailed('$e');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -173,12 +175,12 @@ class _SendPageState extends ConsumerState<SendPage> {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text('支付成功'),
-          content: SelectableText('交易 ID：$txid'),
+          title: Text(s.paymentSuccess),
+          content: SelectableText(s.txIdLabel('$txid')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('确定'),
+              child: Text(s.ok),
             ),
           ],
         ),
@@ -193,14 +195,15 @@ class _SendPageState extends ConsumerState<SendPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final wallet = ref.watch(walletStateProvider);
+    final s = ref.watch(appStringsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('付款'),
+        title: Text(s.navSend),
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
-            tooltip: '扫码付款',
+            tooltip: s.scanPayTooltip,
             onPressed: _loading ? null : _scan,
           ),
         ],
@@ -225,12 +228,12 @@ class _SendPageState extends ConsumerState<SendPage> {
             TextField(
               controller: _addressCtrl,
               decoration: InputDecoration(
-                labelText: '收款地址',
-                hintText: _asset == 'native' ? 'rcpu1... 或 rcpux1...' : '0x...',
+                labelText: s.recipientAddress,
+                hintText: _asset == 'native' ? s.nativeAddrHint : '0x...',
                 prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.qr_code_scanner),
-                  tooltip: '扫码',
+                  tooltip: s.scanTooltip,
                   onPressed: _loading ? null : _scan,
                 ),
                 border: const OutlineInputBorder(),
@@ -242,7 +245,7 @@ class _SendPageState extends ConsumerState<SendPage> {
               controller: _amountCtrl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: '金额',
+                labelText: s.amount,
                 suffixText: _asset == 'native' ? 'RCPU' : 'wRCPU',
                 prefixIcon: const Icon(Icons.payments_outlined),
                 border: const OutlineInputBorder(),
@@ -252,7 +255,10 @@ class _SendPageState extends ConsumerState<SendPage> {
             // 余额提示
             if (wallet.isReady)
               Text(
-                '可用余额: ${(wallet.balanceOf(_asset)?.raw ?? '0.00000000')} ${_asset == 'native' ? 'RCPU' : 'wRCPU'}',
+                s.availableBalance(
+                  wallet.balanceOf(_asset)?.raw ?? '0.00000000',
+                  _asset == 'native' ? 'RCPU' : 'wRCPU',
+                ),
                 style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
               ),
             const SizedBox(height: 24),
@@ -268,7 +274,7 @@ class _SendPageState extends ConsumerState<SendPage> {
                 icon: _loading
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.send),
-                label: const Text('确认付款'),
+                label: Text(s.confirmSend),
               ),
             ),
           ],

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import '../../core/crypto/derivation.dart';
 import '../../core/crypto/mnemonic.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/models/address.dart';
 import '../../core/secure_store/secure_store.dart';
 
@@ -24,7 +25,7 @@ class WalletService {
   /// 导入既有助记词，校验合法性。
   Future<String> importMnemonic(String mnemonic) async {
     if (!Mnemonic.isValid(mnemonic)) {
-      throw const FormatException('助记词无效');
+      throw FormatException(AppStrings.current.invalidMnemonic);
     }
     await _store.saveMnemonic(mnemonic.trim());
     await _store.markInitialized();
@@ -38,7 +39,7 @@ class WalletService {
   Future<DerivedAddresses> deriveAddresses() async {
     final mnemonic = await _store.readMnemonic();
     if (mnemonic == null) {
-      throw StateError('钱包未初始化');
+      throw StateError(AppStrings.current.walletNotInit);
     }
     final d = Derivation(mnemonic);
     return DerivedAddresses(
@@ -55,7 +56,7 @@ class WalletService {
   Future<Uint8List> deriveNativePrivateSpendPriv() async {
     final mnemonic = await _store.readMnemonic();
     if (mnemonic == null) {
-      throw StateError('钱包未初始化');
+      throw StateError(AppStrings.current.walletNotInit);
     }
     return Derivation(mnemonic).deriveNativePrivateKey().spendPriv;
   }
