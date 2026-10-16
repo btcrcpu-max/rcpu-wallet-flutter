@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:rcpu_wallet/core/biometric/biometric_auth.dart';
@@ -13,7 +15,8 @@ import 'package:rcpu_wallet/features/payment/payment_service.dart';
 /// TC-SIG-03 降级路径测试（占位实现下可直接运行）。
 ///
 /// 依赖：`SignatureService.signNative` 为占位（C1/C2 未定），本用例校验两层降级：
-/// 1. 隐私地址 + 指纹成功 → 捕获 `UnimplementedError` → 降级提示「仅支持明文地址」；
+/// 1. 隐私地址 + 指纹成功 + 未配置 CT 代理 → 捕获 `UnimplementedError`
+///    → 降级提示「隐私地址支付需 CT 代理」；
 /// 2. 指纹取消 → 直接失败，不进入签名链路（不产生签名对象）。
 /// 本文件不依赖真实生物识别 / RPC，全部以 fake 注入。
 class _FakeBiometric implements BiometricAuth {
@@ -48,6 +51,13 @@ class _FakeSignature implements SignatureService {
       '当前仅支持明文地址支付，请使用 rcpu1 地址。',
     );
   }
+
+  @override
+  Uint8List signEcdsaDigest(Uint8List privKey32, Uint8List digest32) =>
+      Uint8List(0);
+
+  @override
+  Uint8List compressedPubKey(Uint8List privKey32) => Uint8List(0);
 }
 
 class _FakeNativeRpc implements NativeRpcClient {
@@ -63,6 +73,10 @@ class _FakeNativeRpc implements NativeRpcClient {
   Future<List<NativeUtxo>> getUtxos(String address) async {
     throw UnimplementedError('TC-SIG-03 不涉及 UTXO 查询');
   }
+
+  @override
+  Future<String> getRawTransactionHex(String txidDisplayHex) async =>
+      throw UnimplementedError('TC-SIG-03 不涉及原始交易拉取');
 
   @override
   Future<String> broadcast(String signedTxHex) async => 'fake_txid';
@@ -103,7 +117,7 @@ void main() {
         assetType: 'native',
       );
       expect(result.ok, false);
-      expect(result.error, contains('仅支持明文地址'));
+      expect(result.error, contains('CT 代理'));
     });
 
     test('指纹取消 → 直接失败', () async {

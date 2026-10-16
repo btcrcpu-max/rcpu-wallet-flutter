@@ -151,6 +151,21 @@ class SignatureService {
     return NativeTxCodec.bytesToHex(tx.serialize());
   }
 
+  /// 对**已给定的** 32B 摘要做 P2WPKH ECDSA 签名（DER 编码 + SIGHASH_ALL）。
+  ///
+  /// 供 CT 支付链路使用：BIP143 sighash 由服务器 CT 协处理器按共识规则
+  /// （confidential 输入金额按 0 计入）算出，App 侧不得自行重算（金额与
+  /// 承诺形态差异会导致签名与链上校验不一致）。返回签名字节（DER||0x01）。
+  Uint8List signEcdsaDigest(Uint8List privKey32, Uint8List digest32) {
+    if (privKey32.length != 32) throw const FormatException('私钥须为 32 字节');
+    if (digest32.length != 32) throw const FormatException('摘要须为 32 字节');
+    return _ecdsaSignSecp256k1(privKey32, digest32);
+  }
+
+  /// 压缩公钥（33B，`02/03 || X`），P2WPKH witness 第二元素。
+  Uint8List compressedPubKey(Uint8List privKey32) =>
+      _compressedPubKey(privKey32);
+
   /// P2WPKH 锁定脚本判定（`0x00 0x14 || h160`，22 字节）。
   static bool _isP2wpkh(Uint8List spk) =>
       spk.length == 22 && spk[0] == 0x00 && spk[1] == 0x14;

@@ -120,26 +120,40 @@ class NativeRpcClient {
   bool _isMethodNotFound(RpcException e) =>
       e.message.contains('Method not found') || e.code == -32601;
 
-  /// 将 bech32 明文地址转换为 scantxoutset raw() 描述符。
+  /// 将 bech32 原生地址转换为 scantxoutset raw() 描述符。
   ///
-  /// 明文 `rcpu1`（P2WPKH）：payload = `0x00 || hash160(20B)`，
-  /// scriptPubKey = `0014<hash160>`，描述符 `raw(0014<hash160>)`。
-  /// 隐私 `rcpux1`（CT 盲化输出）或解码失败返回 null —— 原生节点
-  /// 的 scantxoutset 无法读取 CT 金额，交由代理 resolve_ct 路径处理。
+  /// - 明文 `rcpu1`（P2WPKH bech32）：payload = `0x00 || hash160(20B)`，
+  ///   scriptPubKey = `0014<hash160>`，描述符 `raw(0014<hash160>)`。
+  /// - 隐私 `rcpux1`（bech32m）：payload = `0x00 || keyid(20B) || pub(33B)`，
+  ///   取 keyid 得 scriptPubKey = `0014<keyid>`（链上 CT 输出同为 P2WPKH 脚本，
+  ///   保密来自 ECDH 盲化而非新脚本类型）。金额在 `scantxoutset` 中读作 0，
+  ///   需再经 CT 协处理器 unblind。
+  /// 解码失败返回 null。
   String? _rawDescriptorFor(String address) {
-    if (!address.startsWith('rcpu1')) return null;
-    try {
-      final w = Bech32.decodeWitness(address);
-      if (w.version != 0 || w.program.length != 20) return null;
-      final sb = StringBuffer('0014');
-      for (final b in w.program) {
-        sb.write(b.toRadixString(16).padLeft(2, '0'));
+    final lower = address.toLowerCase();
+    if (lower.startsWith('rcpux')) {
+      try {
+        final payload = Bech32.decodeToBytes(lower, isBech32m: true);
+        if (payload.length != 54 || payload[0] != 0x00) return null;
+        return 'raw(0014${_hexOf(payload.sublist(1, 21))})';
+      } catch (_) {
+        return null;
       }
-      return 'raw($sb)';
+    }
+    if (!lower.startsWith('rcpu1')) return null;
+    try {
+      final w = Bech32.decodeWitness(lower);
+      if (w.version != 0 || w.program.length != 20) return null;
+      return 'raw(0014${_hexOf(w.program)})';
     } catch (_) {
       return null;
     }
   }
+
+  /// 该地址是否为隐私（CT）地址 `rcpux1...`。
+  static bool _isPrivateAddress(String address) =>
+      address.toLowerCase().startsWith('rcpux');
+
 
   /// 查询原生余额（含 CT unblind 后合计）。
   Future<Balance> getBalance(String address) async {
@@ -226,12 +240,28 @@ class NativeRpcClient {
             amountMicro: (((json['amount'] as num?)?.toDouble() ?? 0.0) * 1e8).toInt(),
             scriptPubKey: spkHex,
             confirmed: true,
-            privacy: 'plain',
+            // 隐私地址下的输出均为 CT（scantxoutset 读金额为 0，需 unblind）。
+            privacy: _isPrivateAddress(address) ? 'ct' : 'plain',
           );
         }).toList();
       }
       rethrow;
     }
+  }
+
+  /// 查询原始交易 hex（`getrawtransaction <txid> true`）。
+  ///
+  /// 供 CT 花费链路使用：由 `scantxoutset` 得到的 CT 输出仅知 txid/vout，
+  /// 需拉取原始交易再交 CT 协处理器 `xctout` 拆出 commitment/rangeproof/nonce。
+  /// [txidDisplayHex] 为**显示字节序**交易 hash（与 `scantxoutset` 一致）。
+  Future<String> getRawTransactionHex(String txidDisplayHex) async {
+    final body = await _rpc('getrawtransaction', [txidDisplayHex, true], id: 30);
+    final result = body['result'];
+    if (result is String) return result;
+    if (result is Map && result['hex'] is String) {
+      return result['hex'] as String;
+    }
+    throw const RpcException(-32000, 'getrawtransaction 返回格式异常');
   }
 
   /// 广播交易，返回交易哈希。
@@ -310,4 +340,8 @@ class NativeRpcClient {
     return Uint8List.fromList(List.generate(
         h.length ~/ 2, (i) => int.parse(h.substring(i * 2, i * 2 + 2), radix: 16)));
   }
+
+  /// 字节数组 → 小写 hex。
+  static String _hexOf(Uint8List b) =>
+      b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
 }

@@ -65,6 +65,10 @@ class _RecordingNativeRpc implements NativeRpcClient {
   }
 
   @override
+  Future<String> getRawTransactionHex(String txidDisplayHex) async =>
+      throw UnimplementedError('明文构造不拉取原始交易');
+
+  @override
   Future<String> broadcast(String signedTxHex) async {
     lastBroadcastHex = signedTxHex;
     return 'fake_txid_${DateTime.now().millisecondsSinceEpoch}';
@@ -223,7 +227,7 @@ void main() {
         fromAddress: plainAddress.value,
       );
       expect(result.ok, false);
-      expect(result.error, contains('仅支持明文地址'));
+      expect(result.error, contains('CT 代理'));
       expect(rpc.lastBroadcastHex, isNull);
     });
 

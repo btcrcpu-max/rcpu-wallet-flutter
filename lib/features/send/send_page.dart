@@ -12,8 +12,9 @@ import 'scan_page.dart';
 /// 付款/发送页：输入（或扫描）收款地址与金额，确认后签名广播。
 ///
 /// 原生 RCPU：走 [PaymentService.confirmAndPay] 完整链路
-/// （指纹确认 → UTXO 选择 → P2TR 输入构造 → BIP340 签名 → 广播）；
-/// 隐私收款（rcpux1）本地无 CT 盲化能力，fail-closed 提示；
+/// （指纹确认 → UTXO 选择 → 交易构造 → 签名 → 广播）；
+/// - 明文收款（`rcpu1`）本地构造 + BIP143/BIP341 签名；
+/// - 隐私收款（`rcpux1`）经 CT 协处理器盲化输出 + 本地签名（私钥不出设备）；
 /// wRCPU 转账（BSC 合约调用）尚未接入，如实提示。
 class SendPage extends ConsumerStatefulWidget {
   const SendPage({super.key});
@@ -130,9 +131,16 @@ class _SendPageState extends ConsumerState<SendPage> {
         if (mnemonic == null) {
           failure = '钱包未初始化';
         } else {
-          // 明文路径花费私钥（m/84'/1'/0'/0/0），与 plain 地址对应。
-          final privKeyHex = Derivation(mnemonic)
+          // 明文路径花费私钥（m/84'/1'/0'/0/0），与 plain 地址对应；
+          // 隐私路径私钥（m/84'/1'/0'/1/0）供 CT 收款盲化/找零与自身 CT 输出解盲。
+          final d = Derivation(mnemonic);
+          final privKeyHex = d
               .deriveNativePlainKey()
+              .spendPriv
+              .map((b) => b.toRadixString(16).padLeft(2, '0'))
+              .join();
+          final ctPrivHex = d
+              .deriveNativePrivateKey()
               .spendPriv
               .map((b) => b.toRadixString(16).padLeft(2, '0'))
               .join();
@@ -142,6 +150,8 @@ class _SendPageState extends ConsumerState<SendPage> {
                 privateKeyHex: privKeyHex,
                 assetType: _asset,
                 fromAddress: addresses.plain.value,
+                ctPrivateKeyHex: ctPrivHex,
+                privateAddress: addresses.private.value,
               );
         }
       }
