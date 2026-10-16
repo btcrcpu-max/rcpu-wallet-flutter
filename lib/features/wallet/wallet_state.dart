@@ -161,4 +161,26 @@ class WalletStateNotifier extends StateNotifier<WalletState> {
       balances: [results[0], results[1]],
     );
   }
+
+  /// 刷新余额（节点高度变化或用户下拉刷新时调用）。
+  ///
+  /// 复用 [_unlock] 的双链查询与单链兜底逻辑；仅在钱包就绪时执行，
+  /// 地址不变，仅更新 [WalletState.balances]。
+  Future<void> refreshBalances() async {
+    final addrs = state.addresses;
+    if (addrs == null || state.status != WalletStatus.ready) return;
+    Future<Balance> guard(String asset, Future<Balance> f) async {
+      try {
+        return await f;
+      } catch (_) {
+        return Balance.zero(asset);
+      }
+    }
+
+    final results = await Future.wait([
+      guard('native', _nativeService.getBalance(addrs.plain.value)),
+      guard('wrcpu', _wrcpuService.getBalance(addrs.bsc.value)),
+    ]);
+    state = state.copyWith(balances: [results[0], results[1]]);
+  }
 }

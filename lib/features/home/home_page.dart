@@ -25,6 +25,14 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final wallet = ref.watch(walletStateProvider);
+    // 区块高度推进时自动刷新余额（新块可能包含本地址入账）。
+    ref.listen<NodeSyncStatus>(nodeSyncProvider, (prev, next) {
+      if (next.connected &&
+          next.height != null &&
+          next.height != prev?.height) {
+        ref.read(walletStateProvider.notifier).refreshBalances();
+      }
+    });
     final pages = <Widget>[
       wallet.isReady
           ? _HomeTab(wallet: wallet, onQuickAction: _switchTab)
@@ -54,18 +62,25 @@ class _HomePageState extends ConsumerState<HomePage> {
 }
 
 /// 首页核心内容。
-class _HomeTab extends StatelessWidget {
+class _HomeTab extends ConsumerWidget {
   final WalletState wallet;
   final ValueChanged<int> onQuickAction;
   const _HomeTab({required this.wallet, required this.onQuickAction});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return SafeArea(
-      child: ListView(
+      child: RefreshIndicator(
+        onRefresh: () async {
+          await Future.wait([
+            ref.read(walletStateProvider.notifier).refreshBalances(),
+            ref.read(nodeSyncProvider.notifier).refresh(),
+          ]);
+        },
+        child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           const SizedBox(height: 8),
@@ -149,6 +164,7 @@ class _HomeTab extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
