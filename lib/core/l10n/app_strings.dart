@@ -512,7 +512,7 @@ class AppStrings {
     nativePayAddrPrefix: 'Native payment address must be rcpu1 / rcpux1',
     wrcpuPayAddrPrefix: 'wRCPU payment address must start with 0x',
     ctBlindingNeeded: 'Private receiving requires CT blinding',
-  });
+  );
 
   /// 全局当前语言实例（服务层使用）。
   ///
