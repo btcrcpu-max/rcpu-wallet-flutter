@@ -27,11 +27,14 @@ class Address {
     if (v.startsWith(evmPrefix)) {
       return Address(v, 'evm');
     }
-    if (v.startsWith(privatePrefix)) {
-      return Address(v, 'private');
+    // bech32 地址大小写不敏感（BIP173：全小写或全大写均为合法
+    // 编码，QT 二维码按惯例输出全大写）；统一归一为小写存储。
+    final lower = v.toLowerCase();
+    if (lower.startsWith(privatePrefix)) {
+      return Address(lower, 'private');
     }
-    if (v.startsWith(plainPrefix)) {
-      return Address(v, 'plain');
+    if (lower.startsWith(plainPrefix)) {
+      return Address(lower, 'plain');
     }
     throw FormatException('无法识别的地址前缀: $v');
   }
