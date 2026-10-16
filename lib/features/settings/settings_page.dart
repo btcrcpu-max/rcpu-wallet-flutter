@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/di.dart';
 import '../wallet/wallet_state.dart';
@@ -95,16 +96,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Future<void> _exportMnemonic() async {
     final bio = ref.read(biometricAuthProvider);
-    if (_bioEnabled) {
-      final ok = await bio.authenticate(reason: '验证身份以导出助记词');
-      if (!ok) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('生物识别验证失败')),
-          );
-        }
-        return;
+    // 备份必须验证身份（指纹/人脸或设备锁屏密码），
+    // 与「生物识别」开关状态无关。
+    final ok = await bio.authenticate(reason: '验证身份以导出助记词');
+    if (!ok) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('身份验证失败，无法导出助记词')),
+        );
       }
+      return;
     }
 
     final store = ref.read(secureStoreProvider);
@@ -123,6 +124,53 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('助记词已复制到剪贴板')),
     );
+  }
+
+  /// 退出当前钱包：二次确认 + 身份验证后清除本机助记词，
+  /// 回到创建/导入页，可创建或导入其他钱包。
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('退出当前钱包'),
+        content: const Text(
+          '退出将删除本机保存的助记词并清空钱包数据。\n\n'
+          '请确认你已备份助记词，否则资产将无法恢复！',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('我已备份，退出'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    // 退出删除数据前同样要求身份验证。
+    final bio = ref.read(biometricAuthProvider);
+    final ok = await bio.authenticate(reason: '验证身份以退出钱包');
+    if (!ok) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('身份验证失败，已取消退出')),
+        );
+      }
+      return;
+    }
+
+    final store = ref.read(secureStoreProvider);
+    await store.deleteMnemonic();
+    await store.clearInitialized();
+    ref.read(walletStateProvider.notifier).lock();
+    if (mounted) context.go('/wallet');
   }
 
   @override
@@ -204,7 +252,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ListTile(
               leading: Icon(Icons.info),
               title: Text('版本'),
-              subtitle: Text('v0.3.4'),
+              subtitle: Text('v0.3.5'),
+            ),
+          ]),
+          _SettingsSection(title: '钱包', children: [
+            ListTile(
+              leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
+              title: Text(
+                '退出 / 切换钱包',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              subtitle: const Text('删除本机钱包数据，返回创建/导入页'),
+              onTap: _logout,
             ),
           ]),
         ],

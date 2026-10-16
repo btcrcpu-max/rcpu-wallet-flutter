@@ -18,8 +18,11 @@ class ScannedPayment {
     this.memo,
   });
 
-  /// 是否原生地址（rcpu1 / rcpux1 前缀）。
-  bool get isNative => address.startsWith('rcpu1') || address.startsWith('rcpux1');
+  /// 是否原生地址（rcpu1 / rcpux1 前缀，大小写不敏感）。
+  bool get isNative {
+    final lower = address.toLowerCase();
+    return lower.startsWith('rcpu1') || lower.startsWith('rcpux1');
+  }
 
   /// 是否 wRCPU（0x 前缀）。
   bool get isWrcpu => address.startsWith('0x');
@@ -36,16 +39,23 @@ class ScannedPayment {
 /// 防止误触网页或恶意 URI。
 class QrScanner {
   /// 解析扫码文本为付款目标；非 rcpu: 协议抛 [FormatException]。
+  ///
+  /// 协议头大小写不敏感（QT 二维码惯例将地址段输出为全大写，
+  /// bech32 地址统一归一为小写存储）。
   static ScannedPayment parse(String raw) {
     final text = raw.trim();
-    if (!text.startsWith('rcpu:')) {
+    if (!text.toLowerCase().startsWith('rcpu:')) {
       throw const FormatException('非 rcpu: 协议，已拒绝');
     }
     final body = text.substring(5);
     final queryIndex = body.indexOf('?');
-    final address = queryIndex < 0 ? body : body.substring(0, queryIndex);
+    var address = queryIndex < 0 ? body : body.substring(0, queryIndex);
     if (address.isEmpty) {
       throw const FormatException('缺少收款地址');
+    }
+    // bech32 地址归一为小写（EVM 0x 地址保持原样）。
+    if (!address.startsWith('0x')) {
+      address = address.toLowerCase();
     }
     String? amount;
     String? asset;

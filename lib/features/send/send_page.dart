@@ -44,7 +44,7 @@ class _SendPageState extends ConsumerState<SendPage> {
     if (raw == null || raw.isEmpty) return;
     if (!mounted) return;
     final text = raw.trim();
-    if (text.startsWith('rcpu:')) {
+    if (text.toLowerCase().startsWith('rcpu:')) {
       try {
         final payment = PaymentService.parseAndValidate(text);
         setState(() {
@@ -58,8 +58,17 @@ class _SendPageState extends ConsumerState<SendPage> {
       }
       return;
     }
+    // 裸地址：bech32 统一小写回填（QT 二维码输出全大写）。
+    final filled = text.startsWith('0x') ? text : text.toLowerCase();
     setState(() {
-      _addressCtrl.text = text;
+      _addressCtrl.text = filled;
+      // 按地址前缀自动切换资产类型，避免用户停留在 wRCPU
+      // 档扫入原生地址造成校验误报。
+      if (filled.startsWith('0x')) {
+        _asset = 'wrcpu';
+      } else {
+        _asset = 'native';
+      }
       _error = null;
     });
   }

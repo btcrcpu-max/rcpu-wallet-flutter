@@ -81,6 +81,12 @@ class WalletStateNotifier extends StateNotifier<WalletState> {
   WalletStateNotifier(this._service, this._nativeService, this._wrcpuService)
       : super(const WalletState(status: WalletStatus.uninitialized));
 
+  /// 退出当前钱包：清除内存状态（持久层助记词由调用方经
+  /// SecureStore.deleteMnemonic / clearInitialized 清除）。
+  void lock() {
+    state = const WalletState(status: WalletStatus.uninitialized);
+  }
+
   /// 首次启动时检测是否已初始化。
   Future<void> checkInitialized() async {
     state = const WalletState(status: WalletStatus.loading);

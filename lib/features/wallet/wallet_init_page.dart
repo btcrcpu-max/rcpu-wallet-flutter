@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/di.dart';
 import '../wallet/wallet_state.dart';
 
 /// 钱包初始化页：创建新钱包或导入助记词。
@@ -102,7 +103,7 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
                 ),
                 const SizedBox(height: 16),
                 FilledButton(
-                  onPressed: () => context.go('/'),
+                  onPressed: _enterWallet,
                   child: const Text('我已备份，进入钱包'),
                 ),
               ],
@@ -152,10 +153,57 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
     }
     try {
       await ref.read(walletStateProvider.notifier).importMnemonic(mnemonic);
-      if (mounted) context.go('/');
+      if (mounted) await _enterWallet();
     } catch (e) {
       _showError(e.toString());
     }
+  }
+
+  /// 进入钱包前引导开启生物识别保护（指纹/人脸）。
+  ///
+  /// 设备支持且已录入生物特征但未开启时，弹窗建议开启；
+  /// 开启前需通过一次系统验证（指纹/人脸或锁屏密码）。
+  /// 设备不支持时直接进入，不影响使用。
+  Future<void> _enterWallet() async {
+    final bio = ref.read(biometricAuthProvider);
+    try {
+      final available = await bio.isAvailable();
+      final enrolled = await bio.hasEnrolledBiometrics();
+      final enabled = await bio.isEnabled();
+      if (available && enrolled && !enabled && mounted) {
+        final enable = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('开启指纹/面容保护'),
+            content: const Text(
+              '建议开启生物识别保护钱包：\n'
+              '进入付款、导出助记词等敏感操作时将要求验证指纹/面容或锁屏密码。',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('暂不'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('立即开启'),
+              ),
+            ],
+          ),
+        );
+        if (enable == true) {
+          final ok = await bio.authenticate(reason: '验证以开启生物识别保护');
+          if (ok) {
+            await bio.setEnabled(true);
+          } else if (mounted) {
+            _showError('验证失败，未开启生物识别（可稍后在设置中开启）');
+          }
+        }
+      }
+    } catch (_) {
+      // 生物能力探测失败不阻塞进入钱包。
+    }
+    if (mounted) context.go('/');
   }
 
   void _showError(String msg) {

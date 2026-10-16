@@ -34,4 +34,9 @@ class SecureStore {
   Future<void> markInitialized() async {
     await _storage.write(key: _keyInitialized, value: '1');
   }
+
+  /// 清除初始化标记（退出 / 重置钱包，配合 [deleteMnemonic] 使用）。
+  Future<void> clearInitialized() async {
+    await _storage.delete(key: _keyInitialized);
+  }
 }
