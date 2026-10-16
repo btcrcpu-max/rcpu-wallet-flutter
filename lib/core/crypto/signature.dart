@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:pointycastle/ecc/api.dart';
-import 'package:pointycastle/ecc/curves/secp256k1.dart';
 import 'package:pointycastle/api.dart' as pc;
 import 'package:pointycastle/digests/sha256.dart';
-import 'package:pointycastle/signers/ecdsa_signer.dart';
+import 'package:pointycastle/ecc/curves/secp256k1.dart';
+import 'package:pointycastle/macs/hmac.dart';
 import 'package:web3dart/crypto.dart';
 
 import 'bip340.dart';
@@ -202,19 +201,60 @@ class SignatureService {
 
   /// secp256k1 ECDSA 签名（RFC6979 确定性 nonce，low-S 规范化），
   /// 返回 DER 编码 + SIGHASH_ALL（0x01）后缀。
+  ///
+  /// 手写实现（不依赖 ECDSASigner，避免 pointycastle 导出差异）：
+  /// k 由 RFC6979(HMAC-SHA256) 确定；r = (k·G).x mod n；
+  /// s = k⁻¹·(e + r·d) mod n；BIP62 low-S：s > n/2 时取 n − s。
   static Uint8List _ecdsaSignSecp256k1(Uint8List privKey, Uint8List msgHash) {
     final domain = ECCurve_secp256k1();
-    final d = _bytesToBigInt(privKey);
-    final signer = ECDSASigner(null, HMacDSAKCalculator(SHA256Digest()))
-      ..init(true, pc.PrivateKeyParameter(ECPrivateKey(d, domain)));
-    final sig = signer.generateSignature(msgHash);
-    var s = sig.s;
     final n = domain.n;
+    final d = _bytesToBigInt(privKey);
+    final e = _bytesToBigInt(msgHash) % n;
+
+    final k = _rfc6979Nonce(d, msgHash, n);
+    final pointR = domain.G * k;
+    final r = pointR!.x!.toBigInteger()! % n;
+    final kInv = k.modInverse(n);
+    var s = (kInv * (e + r * d)) % n;
     if (s.compareTo(n >> 1) > 0) {
       s = n - s; // BIP62/BIP146 low-S
     }
-    final der = _derEncode(sig.r, s);
+    final der = _derEncode(r, s);
     return Uint8List.fromList([...der, 0x01]);
+  }
+
+  /// RFC6979 确定性 nonce（HMAC-SHA256，§3.2）：输入私钥 d 与
+  /// 消息哈希 h1，输出 1 ≤ k < n。
+  static BigInt _rfc6979Nonce(BigInt d, Uint8List h1, BigInt n) {
+    final x = _bigIntTo32(d);
+    var v = Uint8List(32)..fillRange(0, 32, 0x01);
+    var k = Uint8List(32);
+    k = _hmacSha256(k, [...v, 0x00, ...x, ...h1]);
+    v = _hmacSha256(k, v);
+    k = _hmacSha256(k, [...v, 0x01, ...x, ...h1]);
+    v = _hmacSha256(k, v);
+    while (true) {
+      v = _hmacSha256(k, v);
+      final candidate = _bytesToBigInt(v);
+      if (candidate > BigInt.zero && candidate < n) return candidate;
+      k = _hmacSha256(k, [...v, 0x00]);
+      v = _hmacSha256(k, v);
+    }
+  }
+
+  static Uint8List _hmacSha256(Uint8List key, List<int> msg) {
+    final h = HMac(SHA256Digest(), 64)..init(pc.KeyParameter(key));
+    return h.process(Uint8List.fromList(msg));
+  }
+
+  static Uint8List _bigIntTo32(BigInt v) {
+    final out = Uint8List(32);
+    var t = v;
+    for (var i = 31; i >= 0; i--) {
+      out[i] = (t & BigInt.from(0xff)).toInt();
+      t = t >> 8;
+    }
+    return out;
   }
 
   /// 压缩公钥（0x02/0x03 || x32），P2WPKH witness 第二元素。
