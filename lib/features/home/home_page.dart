@@ -182,31 +182,81 @@ class _InitGuide extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final s = ref.watch(appStringsProvider);
+    final lang = ref.watch(languageSelectionProvider);
+    final langLabel = switch (lang) {
+      AppLanguage.system => s.langSystem,
+      AppLanguage.zh => s.langZh,
+      AppLanguage.en => s.langEn,
+    };
     return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.account_balance_wallet, size: 72, color: theme.colorScheme.primary),
-              const SizedBox(height: 16),
-              Text(s.noWallet, style: theme.textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Text(s.noWalletHint,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: onCreate,
-                icon: const Icon(Icons.add),
-                label: Text(s.createImportWallet),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4, right: 8),
+              child: TextButton.icon(
+                onPressed: () => _pickLanguage(context, ref),
+                icon: const Icon(Icons.language, size: 20),
+                label: Text(langLabel),
               ),
-            ],
+            ),
           ),
-        ),
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.account_balance_wallet, size: 72, color: theme.colorScheme.primary),
+                    const SizedBox(height: 16),
+                    Text(s.noWallet, style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 8),
+                    Text(s.noWalletHint,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: 24),
+                    FilledButton.icon(
+                      onPressed: onCreate,
+                      icon: const Icon(Icons.add),
+                      label: Text(s.createImportWallet),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  /// 语言选择弹窗（与设置页同一逻辑）。
+  Future<void> _pickLanguage(BuildContext context, WidgetRef ref) async {
+    final s = ref.read(appStringsProvider);
+    final current = ref.read(languageSelectionProvider);
+    final picked = await showDialog<AppLanguage>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(s.language),
+        children: [
+          for (final opt in [
+            (AppLanguage.system, s.langSystem),
+            (AppLanguage.zh, s.langZh),
+            (AppLanguage.en, s.langEn),
+          ])
+            ListTile(
+              title: Text(opt.$2),
+              trailing: current == opt.$1 ? const Icon(Icons.check) : null,
+              onTap: () => Navigator.pop(ctx, opt.$1),
+            ),
+        ],
+      ),
+    );
+    if (picked != null) {
+      await ref.read(languageSelectionProvider.notifier).setLanguage(picked);
+    }
   }
 }
 
