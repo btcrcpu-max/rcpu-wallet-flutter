@@ -121,7 +121,7 @@ class _SendPageState extends ConsumerState<SendPage> {
         if (mnemonic == null) {
           failure = '钱包未初始化';
         } else {
-          // 明文路径花费私钥（m/44'/307'/0'/0/0），与 plain 地址对应。
+          // 明文路径花费私钥（m/84'/1'/0'/0/0），与 plain 地址对应。
           final privKeyHex = Derivation(mnemonic)
               .deriveNativePlainKey()
               .spendPriv

@@ -25,15 +25,13 @@ class Derivation {
   static const String bscPath = "m/44'/60'/0'/0/0";
 
   /// 原生 RCPU 明文路径。
-  /// 工程自定占位（非协议强制）：官方仓库未定义 Native RCPU 的 BIP32 路径常量，
-  /// Coin type 307 未在 SLIP-44 注册；派生路径属钱包实现层决策。
-  /// 与官方钱包导出地址的一致性待官方钱包源码/官方确认（docs/path-c-spec.md §4.1）。
-  static const String nativePlainPath = "m/44'/307'/0'/0/0";
+  /// 定版（2026-10-16）：与网页钱包派生结果一致，采用其 BIP84 路径。
+  /// 此前占位 `m/44'/307'/0'/0/0` 弃用，旧地址余额需用户自行迁移。
+  static const String nativePlainPath = "m/84'/1'/0'/0/0";
 
   /// 原生 RCPU 隐私路径（默认 Path C）。
-  /// 同为工程自定占位（非协议强制），沿用「change/privacy」分支习惯；
-  /// 定版依据同 [nativePlainPath]。
-  static const String nativePrivatePath = "m/44'/307'/0'/1/0";
+  /// 与明文同族、change=1 分支；待官方 Path C 公布后对齐。
+  static const String nativePrivatePath = "m/84'/1'/0'/1/0";
 
   /// 隐私地址 HRP（mainnet）。
   static const String confidentialHrp = 'rcpux';
@@ -84,12 +82,12 @@ class Derivation {
     );
   }
 
-  /// 派生明文花费密钥组（`m/44'/307'/0'/0/0`）。
+  /// 派生明文花费密钥组（`m/84'/1'/0'/0/0`）。
   NativeKeyBundle deriveNativePlainKey() {
     return NativeKeyBundle.fromBip32(deriveKey(nativePlainPath));
   }
 
-  /// 派生隐私花费密钥组（`m/44'/307'/0'/1/0`）。
+  /// 派生隐私花费密钥组（`m/84'/1'/0'/1/0`）。
   NativeKeyBundle deriveNativePrivateKey() {
     return NativeKeyBundle.fromBip32(deriveKey(nativePrivatePath));
   }
