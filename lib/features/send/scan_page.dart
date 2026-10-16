@@ -57,7 +57,7 @@ class _ScanPageState extends State<ScanPage> {
         children: [
           MobileScanner(
             onDetect: _onDetect,
-            errorBuilder: (context, error, child) {
+            errorBuilder: (context, error) {
               // 展示真实错误码，便于区分权限拒绝 / 相机被占用 /
               // ML Kit 初始化失败等不同根因（统一文案会误导排查）。
               final detail = StringBuffer()
