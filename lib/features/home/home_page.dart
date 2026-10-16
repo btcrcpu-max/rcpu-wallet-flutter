@@ -108,8 +108,14 @@ class _HomeTab extends ConsumerWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(wallet.totalBalanceDisplay,
-                          style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(wallet.totalBalanceDisplay,
+                              style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
                       const SizedBox(width: 8),
                       Text('RCPU', style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
                     ],
@@ -280,14 +286,39 @@ class _AssetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: iconColor.withAlpha(31),
-          child: Icon(icon, color: iconColor),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: iconColor.withAlpha(31),
+              child: Icon(icon, color: iconColor),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(assetName,
+                      style: theme.textTheme.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  Text(subtitle,
+                      style: theme.textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(balance.raw,
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ),
+          ],
         ),
-        title: Text(assetName, style: theme.textTheme.titleMedium),
-        subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
-        trailing: Text(balance.raw, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
       ),
     );
   }

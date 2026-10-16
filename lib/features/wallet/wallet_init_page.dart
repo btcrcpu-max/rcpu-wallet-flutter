@@ -56,6 +56,13 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
       );
     }
 
+    final lang = ref.watch(languageSelectionProvider);
+    final langLabel = switch (lang) {
+      AppLanguage.system => s.langSystem,
+      AppLanguage.zh => s.langZh,
+      AppLanguage.en => s.langEn,
+    };
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -63,7 +70,15 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _pickLanguage,
+                  icon: const Icon(Icons.language, size: 20),
+                  label: Text(langLabel),
+                ),
+              ),
+              const SizedBox(height: 16),
               Icon(Icons.account_balance_wallet, size: 64, color: colorScheme.primary),
               const SizedBox(height: 16),
               Text(s.appTitle, style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
@@ -208,5 +223,32 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
 
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  /// 语言选择弹窗（与设置页同一逻辑）。
+  Future<void> _pickLanguage() async {
+    final s = ref.read(appStringsProvider);
+    final current = ref.read(languageSelectionProvider);
+    final picked = await showDialog<AppLanguage>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(s.language),
+        children: [
+          for (final opt in [
+            (AppLanguage.system, s.langSystem),
+            (AppLanguage.zh, s.langZh),
+            (AppLanguage.en, s.langEn),
+          ])
+            ListTile(
+              title: Text(opt.$2),
+              trailing: current == opt.$1 ? const Icon(Icons.check) : null,
+              onTap: () => Navigator.pop(ctx, opt.$1),
+            ),
+        ],
+      ),
+    );
+    if (picked != null) {
+      await ref.read(languageSelectionProvider.notifier).setLanguage(picked);
+    }
   }
 }
