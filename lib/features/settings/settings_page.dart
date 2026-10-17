@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../app/di.dart';
 import '../../core/l10n/app_strings.dart';
 import '../wallet/wallet_state.dart';
+
+/// 包信息只取一次（fromPlatform 走 platform channel，避免重复调用）。
+/// 版本号直接读 pubspec.yaml，发版时无需再改界面代码。
+Future<PackageInfo>? _packageInfoFuture;
 
 /// 设置页。
 class SettingsPage extends ConsumerStatefulWidget {
@@ -304,7 +309,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ListTile(
               leading: const Icon(Icons.info),
               title: Text(s.version),
-              subtitle: const Text('v0.3.9'),
+              subtitle: FutureBuilder<PackageInfo>(
+                future: (_packageInfoFuture ??= PackageInfo.fromPlatform()),
+                builder: (context, snap) {
+                  final v = snap.data?.version ?? '—';
+                  return Text('v$v');
+                },
+              ),
             ),
           ]),
           _SettingsSection(title: s.walletSection, children: [

@@ -1,7 +1,7 @@
 name: rcpu_wallet
 description: RCPU 手机钱包 - 原生 RCPU（明文+CT）与 BSC wRCPU 双链钱包
 publish_to: 'none'
-version: 0.4.3+8
+version: 0.4.3+9
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -22,6 +22,7 @@ dependencies:
   uuid: ^4.5.0
   http: ^1.2.2
   shared_preferences: ^2.3.2
+  package_info_plus: ^8.0.0
   # Path C 原语：SHA256/RIPEMD160(HASH160)、secp256k1 曲线、BIP340 Schnorr、HKDF
   pointycastle: ^3.9.1
 
