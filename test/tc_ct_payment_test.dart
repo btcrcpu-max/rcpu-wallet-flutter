@@ -182,6 +182,13 @@ void main() {
   final changeSpk = '0014${_hexOf(Derivation.hash160(sig.compressedPubKey(ctPriv)))}';
 
   /// 假 helper 的「无 witness」交易：version || vin(1) || vout(收款/找零?/fee) || locktime。
+  String le32(int v) => [
+        v & 0xff,
+        (v >> 8) & 0xff,
+        (v >> 16) & 0xff,
+        (v >> 24) & 0xff,
+      ].map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+
   String fakeNoWitHex({
     required String prevTxidHex, // 64 hex（内部字节序）
     required int vout,
@@ -198,7 +205,7 @@ void main() {
     outs.write('000000000000000000'); // 显式 fee 输出（空脚本）
     n++;
     return '03000000'
-        '01$prevTxidHex${vout.toRadixString(16).padLeft(8, '0')}'
+        '01$prevTxidHex${le32(vout)}'
         '00' // scriptSig 空（P2WPKH）
         'fdffffff' // sequence
         '${n.toRadixString(16).padLeft(2, '0')}'
