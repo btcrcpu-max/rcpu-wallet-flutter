@@ -85,8 +85,9 @@ class PaymentService {
   /// [ctPrivateKeyHex] / [privateAddress] 为自己的隐私路径私钥与 `rcpux1`
   /// 地址（CT 找零与 CT 输入解盲/签名使用，`m/84'/1'/0'/1/0`）；
   /// [utxos] / [ctUtxos] 仅供测试注入；
-  /// [subtractFeeFromAmount] 为「最大付款」模式：花费全部可用 UTXO，
-  /// 手续费从付款金额中扣除（单输出、无找零），仅明文收款路径生效。
+  /// [subtractFeeFromAmount] 为「最大付款」模式：花费全部可用输入（明文
+  /// 收款路径为全部明文 UTXO；隐私收款路径为明文 + CT 全部输入），手续费
+  /// 从付款金额中扣除（无找零），交易内实付金额按实际尺寸校正后重算。
   Future<PaymentResult> confirmAndPay({
     required String toAddress,
     required int amountMicro,
@@ -124,6 +125,7 @@ class PaymentService {
           utxos: utxos,
           ctUtxos: ctUtxos,
           feeRateMicroPerByte: feeRateMicroPerByte,
+          subtractFee: subtractFeeFromAmount,
         );
       } else {
         final built = await _buildTxHex(
@@ -172,6 +174,7 @@ class PaymentService {
     required List<NativeUtxo>? utxos,
     required List<NativeUtxo>? ctUtxos,
     required int feeRateMicroPerByte,
+    bool subtractFee = false,
   }) async {
     final helper = ctHelper;
     if (helper == null) {
@@ -225,29 +228,46 @@ class PaymentService {
       throw StateError(AppStrings.current.noSpendableUtxo);
     }
 
-    // 3) UTXO 选择（最小足够集合，按「金额 + 保守手续费」凑足）。
-    final selected = <_CtInput>[];
+    // 3) UTXO 选择：最大付款花费全部输入；否则最小足够集合（按「金额 +
+    // 保守手续费」凑足）。
+    final List<_CtInput> selected;
     var total = 0;
-    for (final c in candidates) {
-      selected.add(c);
-      total += c.amountMicro;
-      if (total >= amountMicro + _estimateCtFee(selected.length, feeRateMicroPerByte)) {
-        break;
+    int reservedFee;
+    if (subtractFee) {
+      selected = candidates;
+      for (final c in selected) {
+        total += c.amountMicro;
+      }
+      reservedFee = _estimateCtFee(selected.length, feeRateMicroPerByte);
+    } else {
+      selected = <_CtInput>[];
+      for (final c in candidates) {
+        selected.add(c);
+        total += c.amountMicro;
+        if (total >= amountMicro + _estimateCtFee(selected.length, feeRateMicroPerByte)) {
+          break;
+        }
+      }
+      reservedFee = _estimateCtFee(selected.length, feeRateMicroPerByte);
+      if (total < amountMicro + reservedFee) {
+        throw StateError(AppStrings.current.insufficient(
+            Amount.fromMicro(total), Amount.fromMicro(amountMicro)));
       }
     }
-    var reservedFee = _estimateCtFee(selected.length, feeRateMicroPerByte);
-    if (total < amountMicro + reservedFee) {
-      throw StateError(AppStrings.current.insufficient(
-          Amount.fromMicro(total), Amount.fromMicro(amountMicro)));
+
+    // 最大付款：手续费从金额里扣（无找零）；普通付款：找零差额归 fee。
+    var payMicro = subtractFee ? total - reservedFee : amountMicro;
+    if (payMicro <= 0) {
+      throw StateError(AppStrings.current.insufficientWithFee);
     }
 
     // 4) 构造（找零 CT）；手续费由输入的显式输出补足。
-    var change = total - amountMicro - reservedFee;
+    var change = subtractFee ? 0 : total - payMicro - reservedFee;
     final buildInputs = [for (final s in selected) s.toBuildInput()];
     List<CtBuildOutput> outputs = _ctOutputs(
       recipientScriptHex: recipientScriptHex,
       recipientBlindingHex: recipient.blindingPubHex,
-      amountMicro: amountMicro,
+      amountMicro: payMicro,
       changeScriptHex: changeScriptHex,
       changeBlindingHex: _hex(ctPub),
       changeMicro: change,
@@ -259,12 +279,19 @@ class PaymentService {
         built.txNoWitnessHex, selected.length, feeRateMicroPerByte);
     if (neededFee > reservedFee) {
       reservedFee = neededFee;
-      change = total - amountMicro - reservedFee;
-      if (change < 0) throw StateError(AppStrings.current.insufficientWithFee);
+      if (subtractFee) {
+        payMicro = total - reservedFee;
+        change = 0;
+      } else {
+        change = total - payMicro - reservedFee;
+      }
+      if (payMicro <= 0 || change < 0) {
+        throw StateError(AppStrings.current.insufficientWithFee);
+      }
       outputs = _ctOutputs(
         recipientScriptHex: recipientScriptHex,
         recipientBlindingHex: recipient.blindingPubHex,
-        amountMicro: amountMicro,
+        amountMicro: payMicro,
         changeScriptHex: changeScriptHex,
         changeBlindingHex: _hex(ctPub),
         changeMicro: change,
@@ -615,19 +642,50 @@ class PaymentService {
     return vsize * feeRateMicroPerByte;
   }
 
-  /// 估算「最大付款」可转金额（micro）：全部可用 UTXO − 手续费（单输出）。
+  /// 估算「最大付款」可转金额（micro）：全部可用输入 − 手续费（无找零）。
   ///
   /// 供发送页 MAX 按钮回填；与 [subtractFee] 构建路径保持同一口径。
+  /// - 明文收款（`rcpu1`）：仅明文 UTXO，按单输出明文交易估费；
+  /// - 隐私收款（`rcpux1`，传 [privateAddress] + [ctPrivateKeyHex]）：
+  ///   明文 P2WPKH + 隐私地址 CT 输入一并计入，按 CT 交易保守估费
+  ///   （实付金额在构建时按真实尺寸再校正）。
   /// 无可用输出或余额不足以覆盖手续费时返回 0。
   Future<int> estimateMaxSendableMicro(
     String fromAddress, {
     int feeRateMicroPerByte = defaultFeeRateMicroPerByte,
+    String? privateAddress,
+    String? ctPrivateKeyHex,
   }) async {
-    final pool = (await nativeRpc.getUtxos(fromAddress))
-        .where((u) =>
-            u.confirmed &&
-            u.amountMicro > 0 &&
-            (u.isP2wpkhInput || u.isP2trInput))
+    final plainUtxos = (await nativeRpc.getUtxos(fromAddress))
+        .where((u) => u.confirmed && u.amountMicro > 0)
+        .toList();
+
+    // 隐私收款：CT 路径（含 CT 输入解盲）。
+    if (privateAddress != null &&
+        privateAddress.isNotEmpty &&
+        ctPrivateKeyHex != null &&
+        ctHelper != null) {
+      final ctKey = _hexBytes(ctPrivateKeyHex);
+      var total = 0;
+      var nIn = 0;
+      for (final u in plainUtxos.where((u) => u.isP2wpkhInput)) {
+        total += u.amountMicro;
+        nIn++;
+      }
+      final ctPool = await _resolveCtInputs(
+          await nativeRpc.getUtxos(privateAddress), ctKey);
+      for (final c in ctPool) {
+        total += c.amountMicro;
+        nIn++;
+      }
+      if (nIn == 0) return 0;
+      final max = total - _estimateCtFee(nIn, feeRateMicroPerByte);
+      return max > 0 ? max : 0;
+    }
+
+    // 明文路径。
+    final pool = plainUtxos
+        .where((u) => u.isP2wpkhInput || u.isP2trInput)
         .toList();
     if (pool.isEmpty) return 0;
     var total = 0;

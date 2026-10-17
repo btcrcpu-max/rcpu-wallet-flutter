@@ -54,11 +54,14 @@ class _SendPageState extends ConsumerState<SendPage> {
     super.dispose();
   }
 
-  /// 最大付款：估算全部可用 UTXO − 手续费后回填金额。
+  /// 最大付款：估算全部可用输入 − 手续费后回填金额。
+  ///
+  /// 收款地址为 `rcpux1` 时走 CT 口径（明文 + 隐私地址 CT 输入一并计入）；
+  /// 否则按明文口径（仅明文 UTXO）。
   Future<void> _fillMax() async {
     final s = ref.read(appStringsProvider);
-    final from = ref.read(walletStateProvider).addresses?.plain.value;
-    if (from == null) {
+    final addrs = ref.read(walletStateProvider).addresses;
+    if (addrs == null) {
       setState(() => _error = s.walletLocked);
       return;
     }
@@ -67,8 +70,35 @@ class _SendPageState extends ConsumerState<SendPage> {
       _error = null;
     });
     try {
+      // 按收款地址形态选择估算口径（地址未填/明文 → 明文口径）。
+      var toPrivate = false;
+      final toText = _addressCtrl.text.trim();
+      if (toText.isNotEmpty) {
+        try {
+          toPrivate = Address.parse(toText).isPrivate;
+        } catch (_) {
+          // 地址非法不阻塞估算，按明文口径。
+        }
+      }
+      String? ctPrivHex;
+      String? privAddr;
+      if (toPrivate) {
+        final mnemonic = await ref.read(secureStoreProvider).readMnemonic();
+        if (mnemonic != null) {
+          ctPrivHex = Derivation(mnemonic)
+              .deriveNativePrivateKey()
+              .spendPriv
+              .map((b) => b.toRadixString(16).padLeft(2, '0'))
+              .join();
+          privAddr = addrs.private.value;
+        }
+      }
       final maxMicro =
-          await ref.read(paymentServiceProvider).estimateMaxSendableMicro(from);
+          await ref.read(paymentServiceProvider).estimateMaxSendableMicro(
+                addrs.plain.value,
+                privateAddress: privAddr,
+                ctPrivateKeyHex: ctPrivHex,
+              );
       if (!mounted) return;
       setState(() {
         if (maxMicro <= 0) {
