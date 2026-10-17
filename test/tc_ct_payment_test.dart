@@ -61,6 +61,9 @@ class _CannedRpc implements NativeRpcClient {
   String get baseUrl => 'fake://native';
 
   @override
+  Future<int?> getConfirmations(String txid) async => null;
+
+  @override
   Future<Balance> getBalance(String address) async =>
       const Balance(asset: 'native', raw: '0', micro: 0);
 
