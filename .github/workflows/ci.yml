@@ -147,9 +147,11 @@ jobs:
           test -f android/key.properties && test -s android/rcpu-release.jks
 
       # --- 阶段 2c：APK 构建 --------------------------------------- #
+      # --obfuscate：Dart 层混淆（防逆向助记词/端点/业务逻辑）；
+      # --split-debug-info：混淆符号表单独出包，供 crash 还原，不随 APK 发布。
       - name: Build release APK (signed)
         if: steps.signing.outputs.signing == 'enabled'
-        run: flutter build apk --release
+        run: flutter build apk --release --obfuscate --split-debug-info=build/symbols
 
       - name: Build debug APK (unsigned fallback)
         if: steps.signing.outputs.signing != 'enabled'

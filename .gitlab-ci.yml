@@ -86,7 +86,7 @@ build:
         EOF
         test -s android/rcpu-release.jks
         test -f android/key.properties
-        flutter build apk --release
+        flutter build apk --release --obfuscate --split-debug-info=build/symbols
       else
         echo "==> signing: missing (WARN: 构建 debug APK，签名检查步骤将报告缺失)"
         flutter build apk --debug

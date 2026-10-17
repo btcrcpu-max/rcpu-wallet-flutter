@@ -129,10 +129,44 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       return;
     }
 
-    await Clipboard.setData(ClipboardData(text: mnemonic));
+    // 安全展示：不写入系统剪贴板，明文只出现在本次受保护的对话框内，
+    // 由用户肉眼核对/抄写后手动关闭，避免留痕被其他应用读取。
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.backupMnemonic),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              SelectableText(
+                mnemonic,
+                style: const TextStyle(fontSize: 16, height: 1.6),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                s.mnemonicWarning,
+                style: TextStyle(
+                  color: Theme.of(ctx).colorScheme.error,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(s.ok),
+          ),
+        ],
+      ),
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(s.mnemonicCopied)),
+      SnackBar(content: Text(s.mnemonicShown)),
     );
   }
 
