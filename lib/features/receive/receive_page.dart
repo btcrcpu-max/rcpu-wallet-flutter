@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../core/l10n/app_strings.dart';
 import '../../core/models/address.dart';
+import '../home/pending_tx_card.dart';
 import '../wallet/wallet_state.dart';
 
 /// 收款页：地址展示 + 二维码生成。
@@ -109,6 +110,9 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
+            const SizedBox(height: 12),
+            // 收款确认数（达到 6 确认后自动消失）
+            const PendingTxCard(),
           ],
         ),
       ),
@@ -122,3 +126,4 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
     return base;
   }
 }
+

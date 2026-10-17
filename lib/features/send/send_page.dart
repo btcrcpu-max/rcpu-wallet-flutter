@@ -7,6 +7,7 @@ import '../../core/l10n/app_strings.dart';
 import '../../core/models/address.dart';
 import '../../core/utils/amount.dart';
 import '../payment/payment_service.dart';
+import '../payment/tx_tracker.dart';
 import '../wallet/wallet_state.dart';
 import 'scan_page.dart';
 
@@ -31,11 +32,60 @@ class _SendPageState extends ConsumerState<SendPage> {
   bool _loading = false;
   String? _error;
 
+  /// 「最大付款」模式：金额由 [estimateMaxSendableMicro] 回填，
+  /// 广播时手续费从付款金额中扣除；用户手动改金额后自动退出该模式。
+  bool _isMax = false;
+
+  /// 程序化回填金额时置位，避免被文本侦听误判为手动编辑。
+  bool _programmatic = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountCtrl.addListener(() {
+      if (!_programmatic && _isMax) setState(() => _isMax = false);
+    });
+  }
+
   @override
   void dispose() {
     _addressCtrl.dispose();
     _amountCtrl.dispose();
     super.dispose();
+  }
+
+  /// 最大付款：估算全部可用 UTXO − 手续费后回填金额。
+  Future<void> _fillMax() async {
+    final s = ref.read(appStringsProvider);
+    final from = ref.read(walletStateProvider).addresses?.plain.value;
+    if (from == null) {
+      setState(() => _error = s.walletLocked);
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final maxMicro =
+          await ref.read(paymentServiceProvider).estimateMaxSendableMicro(from);
+      if (!mounted) return;
+      setState(() {
+        if (maxMicro <= 0) {
+          _isMax = false;
+          _error = s.insufficientWithFee;
+        } else {
+          _programmatic = true;
+          _amountCtrl.text = Amount.fromMicro(maxMicro);
+          _programmatic = false;
+          _isMax = true;
+        }
+      });
+    } catch (e) {
+      if (mounted) setState(() => _error = s.paymentFailed('$e'));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   /// 扫码：`rcpu:` 收款 URI 回填地址/金额/资产；裸地址仅回填地址。
@@ -154,6 +204,7 @@ class _SendPageState extends ConsumerState<SendPage> {
                 fromAddress: addresses.plain.value,
                 ctPrivateKeyHex: ctPrivHex,
                 privateAddress: addresses.private.value,
+                subtractFeeFromAmount: _isMax,
               );
         }
       }
@@ -170,8 +221,17 @@ class _SendPageState extends ConsumerState<SendPage> {
 
     if (result.ok) {
       final txid = result.txid;
+      // 登记待确认交易（首页/收款页展示确认数，6 确认后消失）。
+      final fromAddr =
+          ref.read(walletStateProvider).addresses?.plain.value ?? '';
+      ref.read(txTrackerProvider.notifier).recordOutgoing(
+            txid: '$txid',
+            amount: amount,
+            address: fromAddr,
+          );
       _addressCtrl.clear();
       _amountCtrl.clear();
+      setState(() => _isMax = false);
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -240,17 +300,40 @@ class _SendPageState extends ConsumerState<SendPage> {
               ),
             ),
             const SizedBox(height: 12),
-            // 金额
-            TextField(
-              controller: _amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: s.amount,
-                suffixText: _asset == 'native' ? 'RCPU' : 'wRCPU',
-                prefixIcon: const Icon(Icons.payments_outlined),
-                border: const OutlineInputBorder(),
-              ),
+            // 金额（原生资产支持 MAX：手续费从付款金额中扣除）
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _amountCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: s.amount,
+                      suffixText: _asset == 'native' ? 'RCPU' : 'wRCPU',
+                      prefixIcon: const Icon(Icons.payments_outlined),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                if (_asset == 'native')
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8, top: 4),
+                    child: OutlinedButton(
+                      onPressed: _loading ? null : _fillMax,
+                      child: Text(s.maxLabel),
+                    ),
+                  ),
+              ],
             ),
+            if (_isMax)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  s.maxFeeHint,
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
+                ),
+              ),
             const SizedBox(height: 16),
             // 余额提示
             if (wallet.isReady)
@@ -283,3 +366,4 @@ class _SendPageState extends ConsumerState<SendPage> {
     );
   }
 }
+

@@ -264,6 +264,23 @@ class NativeRpcClient {
     throw const RpcException(-32000, 'getrawtransaction 返回格式异常');
   }
 
+  /// 查询交易确认数（`getrawtransaction <txid> true` 的 confirmations 字段）。
+  ///
+  /// 交易未打包（mempool 无该字段）、代理不支持或节点不可达时返回 null，
+  /// 调用方按 0 确认展示。
+  Future<int?> getConfirmations(String txid) async {
+    try {
+      final body = await _rpc('getrawtransaction', [txid, true], id: 31);
+      final result = body['result'];
+      if (result is Map && result['confirmations'] is num) {
+        return (result['confirmations'] as num).toInt();
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 广播交易，返回交易哈希。
   Future<String> broadcast(String signedTxHex) async {
     try {
@@ -345,3 +362,4 @@ class NativeRpcClient {
   static String _hexOf(Uint8List b) =>
       b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
 }
+

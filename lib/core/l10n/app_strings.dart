@@ -99,6 +99,13 @@ class AppStrings {
   final String paymentSuccess;
   final String ok;
 
+  // ---- 待确认交易 / 最大付款 ----
+  final String pendingTxTitle;
+  final String txOutLabel;
+  final String txInLabel;
+  final String maxLabel;
+  final String maxFeeHint;
+
   // ---- 收款 ----
   final String plainSeg;
   final String privateSeg;
@@ -255,6 +262,11 @@ class AppStrings {
     this.walletNotInit = '钱包未初始化',
     this.paymentSuccess = '支付成功',
     this.ok = '确定',
+    this.pendingTxTitle = '待确认交易',
+    this.txOutLabel = '转出',
+    this.txInLabel = '转入',
+    this.maxLabel = '最大',
+    this.maxFeeHint = '已按最大可转填写，手续费将从付款金额中扣除',
     this.plainSeg = '明文 rcpu1',
     this.privateSeg = '隐私 rcpux1',
     this.privateAddrHint = '隐私地址（推荐收款）',
@@ -349,6 +361,9 @@ class AppStrings {
   String receiveAddress(String addr) =>
       isEn ? 'Receiving address: $addr' : '收款地址: $addr';
 
+  /// 确认数展示（0–5；达到 6 后记录消失，不再展示）。
+  String confLabel(int n) => isEn ? 'Confirmations $n/6' : '确认数 $n/6';
+
   /// 中文实例（默认）。
   static const AppStrings zh = AppStrings();
 
@@ -433,6 +448,11 @@ class AppStrings {
     walletNotInit: 'Wallet not initialized',
     paymentSuccess: 'Payment Successful',
     ok: 'OK',
+    pendingTxTitle: 'Pending Transactions',
+    txOutLabel: 'Sent',
+    txInLabel: 'Received',
+    maxLabel: 'MAX',
+    maxFeeHint: 'Max amount filled; the network fee will be deducted from it',
     plainSeg: 'Plain rcpu1',
     privateSeg: 'Private rcpux1',
     privateAddrHint: 'Private address (recommended)',
@@ -574,3 +594,4 @@ final appStringsProvider = Provider<AppStrings>((ref) {
   AppStrings.current = s;
   return s;
 });
+

@@ -84,7 +84,9 @@ class PaymentService {
   /// [privateKeyHex] 为明文路径私钥（`m/84'/1'/0'/0/0`）；
   /// [ctPrivateKeyHex] / [privateAddress] 为自己的隐私路径私钥与 `rcpux1`
   /// 地址（CT 找零与 CT 输入解盲/签名使用，`m/84'/1'/0'/1/0`）；
-  /// [utxos] / [ctUtxos] 仅供测试注入。
+  /// [utxos] / [ctUtxos] 仅供测试注入；
+  /// [subtractFeeFromAmount] 为「最大付款」模式：花费全部可用 UTXO，
+  /// 手续费从付款金额中扣除（单输出、无找零），仅明文收款路径生效。
   Future<PaymentResult> confirmAndPay({
     required String toAddress,
     required int amountMicro,
@@ -97,6 +99,7 @@ class PaymentService {
     String? ctPrivateKeyHex,
     String? privateAddress,
     List<NativeUtxo>? ctUtxos,
+    bool subtractFeeFromAmount = false,
   }) async {
     // 1. 指纹验证
     final authOk = await biometric.authenticate(
@@ -130,6 +133,7 @@ class PaymentService {
           changeAddress: changeAddress,
           utxos: utxos,
           feeRateMicroPerByte: feeRateMicroPerByte,
+          subtractFee: subtractFeeFromAmount,
         );
         signed = await signature.signNative(
           built.txHex,
@@ -462,6 +466,7 @@ class PaymentService {
     String? changeAddress,
     List<NativeUtxo>? utxos,
     required int feeRateMicroPerByte,
+    bool subtractFee = false,
   }) async {
     if (amountMicro <= 0) {
       throw FormatException(AppStrings.current.amountMustBePositive);
@@ -498,35 +503,54 @@ class PaymentService {
     final toScript = _p2wpkhScript(to);
     final changeScript = _p2wpkhScript(change);
 
-    // 1) UTXO 选择：最小足够集合（升序累加）。
-    final selected = <NativeUtxo>[];
-    var total = BigInt.zero;
-    const assumedOutputs = 2; // 收款 + 找零（保守估值）
-    for (final u in pool) {
-      selected.add(u);
-      total += BigInt.from(u.amountMicro);
-      final fee = _estimateFee(selected.length, assumedOutputs, feeRateMicroPerByte);
-      if (total >= BigInt.from(amountMicro) + BigInt.from(fee)) break;
-    }
-    var fee = _estimateFee(selected.length, assumedOutputs, feeRateMicroPerByte);
-    if (total < BigInt.from(amountMicro) + BigInt.from(fee)) {
-      throw StateError(AppStrings.current.insufficient(
-          Amount.fromMicro(total.toInt()), Amount.fromMicro(amountMicro)));
+    // 1) UTXO 选择：最大付款花费全部可用输出；否则最小足够集合（升序累加）。
+    List<NativeUtxo> selected;
+    BigInt total;
+    int fee;
+    BigInt effectiveAmount;
+    if (subtractFee) {
+      selected = pool;
+      total = BigInt.zero;
+      for (final u in selected) {
+        total += BigInt.from(u.amountMicro);
+      }
+      // 手续费从付款金额里扣：单输出、无找零。
+      fee = _estimateFee(selected.length, 1, feeRateMicroPerByte);
+      effectiveAmount = total - BigInt.from(fee);
+      if (effectiveAmount <= BigInt.zero) {
+        throw StateError(AppStrings.current.insufficientWithFee);
+      }
+    } else {
+      selected = <NativeUtxo>[];
+      total = BigInt.zero;
+      const assumedOutputs = 2; // 收款 + 找零（保守估值）
+      for (final u in pool) {
+        selected.add(u);
+        total += BigInt.from(u.amountMicro);
+        final f = _estimateFee(selected.length, assumedOutputs, feeRateMicroPerByte);
+        if (total >= BigInt.from(amountMicro) + BigInt.from(f)) break;
+      }
+      fee = _estimateFee(selected.length, assumedOutputs, feeRateMicroPerByte);
+      if (total < BigInt.from(amountMicro) + BigInt.from(fee)) {
+        throw StateError(AppStrings.current.insufficient(
+            Amount.fromMicro(total.toInt()), Amount.fromMicro(amountMicro)));
+      }
+      effectiveAmount = BigInt.from(amountMicro);
     }
 
-    // 2) 输出构造（找零差额归 fee；无找零时输出数收敛为 1）。
+    // 2) 输出构造（找零差额归 fee；最大付款无找零、手续费精确扣自金额）。
     var outputs = <NativeTxOut>[
-      NativeTxOut(value: BigInt.from(amountMicro), scriptPubKey: toScript),
+      NativeTxOut(value: effectiveAmount, scriptPubKey: toScript),
     ];
-    var changeMicro = total - BigInt.from(amountMicro) - BigInt.from(fee);
-    if (changeMicro > BigInt.zero) {
+    var changeMicro = total - effectiveAmount - BigInt.from(fee);
+    if (changeMicro > BigInt.zero && !subtractFee) {
       outputs = [
         ...outputs,
         NativeTxOut(value: changeMicro, scriptPubKey: changeScript),
       ];
-    } else {
+    } else if (!subtractFee) {
       // 无找零：fee = total - amount（全部视为手续费，需为正）
-      final actualFee = total - BigInt.from(amountMicro);
+      final actualFee = total - effectiveAmount;
       if (actualFee < BigInt.zero) {
         throw StateError(AppStrings.current.insufficientWithFee);
       }
@@ -589,6 +613,30 @@ class PaymentService {
     final witness = nIn * 110; // 栈项数 + 签名(~73B) + 压缩公钥(33B)
     final vsize = base + (witness + 3) ~/ 4;
     return vsize * feeRateMicroPerByte;
+  }
+
+  /// 估算「最大付款」可转金额（micro）：全部可用 UTXO − 手续费（单输出）。
+  ///
+  /// 供发送页 MAX 按钮回填；与 [subtractFee] 构建路径保持同一口径。
+  /// 无可用输出或余额不足以覆盖手续费时返回 0。
+  Future<int> estimateMaxSendableMicro(
+    String fromAddress, {
+    int feeRateMicroPerByte = defaultFeeRateMicroPerByte,
+  }) async {
+    final pool = (await nativeRpc.getUtxos(fromAddress))
+        .where((u) =>
+            u.confirmed &&
+            u.amountMicro > 0 &&
+            (u.isP2wpkhInput || u.isP2trInput))
+        .toList();
+    if (pool.isEmpty) return 0;
+    var total = 0;
+    for (final u in pool) {
+      total += u.amountMicro;
+    }
+    final fee = _estimateFee(pool.length, 1, feeRateMicroPerByte);
+    final max = total - fee;
+    return max > 0 ? max : 0;
   }
 
   static bool _bytesEqual(Uint8List a, Uint8List b) {
@@ -664,3 +712,4 @@ class PaymentResult {
   const PaymentResult.ok(this.txid) : ok = true, error = null;
   const PaymentResult.fail(this.error) : ok = false, txid = null;
 }
+

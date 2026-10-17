@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/models/balance.dart';
 import '../native/node_sync.dart';
+import '../payment/tx_tracker.dart';
 import '../receive/receive_page.dart';
 import '../send/send_page.dart';
 import '../settings/settings_page.dart';
 import '../wallet/wallet_state.dart';
+import 'pending_tx_card.dart';
 
 /// 首页：总资产卡片 + 资产列表 + 底部导航。
 class HomePage extends ConsumerStatefulWidget {
@@ -33,6 +35,16 @@ class _HomePageState extends ConsumerState<HomePage> {
           next.height != null &&
           next.height != prev?.height) {
         ref.read(walletStateProvider.notifier).refreshBalances();
+        // 同步刷新待确认交易的确认数。
+        ref
+            .read(txTrackerProvider.notifier)
+            .refresh(ref.read(walletStateProvider).addresses?.plain.value);
+      }
+    });
+    // 钱包就绪后立即拉取一次待确认交易（含历史入账）。
+    ref.listen<WalletState>(walletStateProvider, (prev, next) {
+      if (next.isReady && prev?.isReady != true) {
+        ref.read(txTrackerProvider.notifier).refresh(next.addresses?.plain.value);
       }
     });
     final pages = <Widget>[
@@ -126,6 +138,9 @@ class _HomeTab extends ConsumerWidget {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          // 待确认交易（收/付款确认数，6 确认后自动消失）
+          const PendingTxCard(),
           const SizedBox(height: 12),
           // 资产列表
           _AssetCard(
