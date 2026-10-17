@@ -69,7 +69,6 @@ class AppStrings {
   final String exportMnReason;
   final String authFailedNoExport;
   final String noWalletData;
-  final String mnemonicCopied;
   final String mnemonicShown;
   final String logoutTitle;
   final String logoutContent;
@@ -236,7 +235,6 @@ class AppStrings {
     this.exportMnReason = '验证身份以导出助记词',
     this.authFailedNoExport = '身份验证失败，无法导出助记词',
     this.noWalletData = '未找到钱包数据',
-    this.mnemonicCopied = '助记词已复制到剪贴板',
     this.mnemonicShown = '助记词已展示，请妥善保存，切勿截图',
     this.logoutTitle = '退出当前钱包',
     this.logoutContent = '退出将删除本机保存的助记词并清空钱包数据。\n\n'
@@ -422,7 +420,6 @@ class AppStrings {
     exportMnReason: 'Verify your identity to export the recovery phrase',
     authFailedNoExport: 'Authentication failed. Recovery phrase not exported',
     noWalletData: 'No wallet data found',
-    mnemonicCopied: 'Recovery phrase copied to clipboard',
     mnemonicShown: 'Recovery phrase shown. Store it safely, never screenshot',
     logoutTitle: 'Log out of current wallet',
     logoutContent:
