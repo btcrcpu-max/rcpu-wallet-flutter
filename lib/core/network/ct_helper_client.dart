@@ -161,7 +161,7 @@ class CtHelperClient {
 
   late final Dio _dio;
 
-  CtHelperClient({this.endpoint = 'http://207.57.129.188/ct'}) {
+  CtHelperClient({this.endpoint = 'https://rcpu.ren/ct'}) {
     _dio = Dio(BaseOptions(
       connectTimeout: const Duration(seconds: 10),
       // 盲化 + range proof 生成较重，放宽至 60s。

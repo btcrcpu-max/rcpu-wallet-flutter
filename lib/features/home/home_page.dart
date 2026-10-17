@@ -414,7 +414,7 @@ class _SyncChip extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${s.endpointLabel}: http://207.57.129.188/rpc'),
+            Text('${s.endpointLabel}: https://rcpu.ren/rpc'),
             Text('${s.blockHeight}: ${sync.height ?? '—'}'),
             Text('${s.updatedAt}: $updatedText'),
             if (!sync.connected && sync.error != null) ...[
