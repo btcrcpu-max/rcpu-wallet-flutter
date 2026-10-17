@@ -6,11 +6,11 @@
         </trust-anchors>
     </base-config>
     <domain-config>
-        <domain includeSubdomains="true">rcpu.ren</domain>
+        <domain includeSubdomains="true">wallet.rcpuapp.top</domain>
         <pin-set expiration="2028-10-13">
             <!-- 固定到链上长期稳定的锚点：ISRG Root X2（Let's Encrypt 2026 链）。
                  叶子/中间证书轮换不影响 pin，避免 Let's Encrypt 90 天续期后连接失败。
-                 取值来自 rcpu.ren:443 实际下发证书链 openssl SPKI-SHA256。 -->
+                 取值来自 wallet.rcpuapp.top:443 实际下发证书链 openssl SPKI-SHA256。 -->
             <pin digest="SHA-256">diGVwiVYbubAI3RW4hB9xU8e/CH2GnkuvVFZE8zmgzI=</pin>
         </pin-set>
     </domain-config>

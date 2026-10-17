@@ -37,7 +37,7 @@ class NativeRpcClient {
 
   late final Dio _dio;
 
-  NativeRpcClient({this.baseUrl = 'https://rcpu.ren/rpc'}) {
+  NativeRpcClient({this.baseUrl = 'https://wallet.rcpuapp.top/rpc'}) {
     _dio = Dio(BaseOptions(
       // 注意：服务端 nginx `location /rpc { proxy_pass .../; }` 对
       // `/rpc/`（带尾斜杠）会转发成 `//` 导致 404，因此请求路径留空，
