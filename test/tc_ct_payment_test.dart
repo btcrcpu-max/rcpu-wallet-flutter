@@ -182,6 +182,14 @@ void main() {
   final changeSpk = '0014${_hexOf(Derivation.hash160(sig.compressedPubKey(ctPriv)))}';
 
   /// 假 helper 的「无 witness」交易：version || vin(1) || vout(收款/找零?/fee) || locktime。
+  ///
+  /// v3（CT）线格式与链上真实交易逐项核实（节点 decoderawtransaction 对照）：
+  /// - 每输入尾部多 1 字节 0x00（helper 构造与链上已确认交易一致）；
+  /// - 输出 = value || nonce || **rangeproof varbytes** || script varbytes
+  ///   （rangeproof 在脚本之前，本链自定义 CTxOut 布局）；
+  /// - 盲化输出：value 承诺 33B（`08||…`）|| nonce 承诺 33B（`04||…`，Path C）；
+  /// - 显式 fee 输出：`01 || 8B 大端(金额)` || `00`（空 nonce）|| `00`（空
+  ///   rangeproof）|| `00`（空脚本）。
   String le32(int v) => [
         v & 0xff,
         (v >> 8) & 0xff,
@@ -189,25 +197,38 @@ void main() {
         (v >> 24) & 0xff,
       ].map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 
+  String be64(int v) => [
+        for (var i = 7; i >= 0; i--) (v >> (8 * i)) & 0xff,
+      ].map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+
   String fakeNoWitHex({
     required String prevTxidHex, // 64 hex（内部字节序）
     required int vout,
     required String recipientSpkHex,
     String? changeSpkHex,
+    int feeMicro = 7290000,
   }) {
-    final outs = StringBuffer()
-      ..write('000000000000000016$recipientSpkHex'); // 收款 CT 输出（值盲化为 0）
+    // rangeproof 3500B：varint 0xfd + le16(3500=0x0dac)。
+    final rp = 'fdac0d${_rep('ab', 3500)}';
+    String ctOut(String spkHex) =>
+        '08${_rep('c1', 32)}' // value 承诺 33B（假承诺，仅承载格式）
+        '04${_rep('e2', 32)}' // Path C nonce 承诺 33B（假）
+        '$rp' // rangeproof varbytes（先于脚本）
+        '16$spkHex'; // script varbytes（22B）
+    final outs = StringBuffer()..write(ctOut(recipientSpkHex));
     var n = 1;
     if (changeSpkHex != null) {
-      outs.write('000000000000000016$changeSpkHex'); // 找零 CT 输出
+      outs.write(ctOut(changeSpkHex));
       n++;
     }
-    outs.write('000000000000000000'); // 显式 fee 输出（空脚本）
+    // 显式 fee 输出（大端金额、空 nonce、空 rangeproof、空脚本）。
+    outs.write('01${be64(feeMicro)}000000');
     n++;
     return '03000000'
         '01$prevTxidHex${le32(vout)}'
         '00' // scriptSig 空（P2WPKH）
         'fdffffff' // sequence
+        '00' // v3 每输入尾字段
         '${n.toRadixString(16).padLeft(2, '0')}'
         '$outs'
         '00000000';

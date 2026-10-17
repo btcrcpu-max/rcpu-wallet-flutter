@@ -1,14 +1,25 @@
 import 'dart:typed_data';
 
-/// 原生 RCPU 交易结构（Bitcoin 风格序列化，segwit 支持）。
+/// 原生 RCPU 交易结构（Bitcoin 风格序列化，segwit + CT 支持）。
 ///
 /// 序列化布局（与 Bitcoin Core 一致）：
 /// - 版本 4B LE
 /// - 输入数 varint；每个输入：prevTxid(32) || prevVout(4LE) || scriptSigLen || scriptSig || seq(4LE)
-/// - 输出数 varint；每个输出：value(8LE) || scriptLen || scriptPubKey
+///   （v3 额外多 1 字节尾字段，观测恒为 0x00，见 [NativeTxCodec.ctVersion]）
+/// - 输出数 varint；输出布局随版本分两种（见下）
 /// - 带 witness 时：标志 0x00 0x01 位于输入数之前（见 [NativeTx.hasWitness]）
 /// - witness 栈（每输入：栈项数 varint + 每项：长度 varint + 字节）
 /// - locktime 4B LE
+///
+/// 输出布局（已对照链上真实 v3 交易与节点 decoderawtransaction 逐项核实）：
+/// - **v2（明文）**：value(8LE) || scriptLen || scriptPubKey；
+/// - **v3（CT，`NativeTxCodec.ctVersion`）**：CConfidentialValue || CConfidentialNonce
+///   || rangeproofLen || rangeproof || scriptLen || scriptPubKey
+///   （**rangeproof 在脚本之前**，与 Elements 不同，是本链自定义 CTxOut 布局）。
+///   金额：0x01 || 8B **大端** = 显式；0x08/0x09 || 32B = Pedersen 承诺；
+///   0x00 = 显式 null（罕见，仅解析保留）。nonce：0x00 = 空；
+///   0x02/0x03/0x04 || 32B = 承诺（0x04 为 Path C，仅存 ephemeral X）。
+///   rangeproof 在输出体内（非 witness），与链上 `CTxOut` 序列化一致。
 ///
 /// 仅承载「交易结构与序列化」职责；sighash 计算见 `bip341.dart`。
 class NativeTx {
@@ -52,12 +63,36 @@ class NativeTxIn {
   bool get isTaproot => witness.any((w) => w.length == 64);
 }
 
-/// 交易输出：金额（8B LE）+ 锁定脚本。
+/// 交易输出：金额 + 锁定脚本（v3 CT 输出另含承诺 / nonce / rangeproof）。
 class NativeTxOut {
-  final BigInt value; // 原生金额（micro）
+  /// 显式金额（micro）；盲化承诺输出为 0。
+  final BigInt value;
   final Uint8List scriptPubKey;
 
-  NativeTxOut({required this.value, required this.scriptPubKey});
+  /// v3（CT）Pedersen 金额承诺（33B，`08/09 || …`）；null = 显式金额。
+  final Uint8List? valueCommitment;
+
+  /// v3（CT）nonce 承诺（33B，`02/03/04 || …`）；null = 空 nonce（0x00）。
+  final Uint8List? nonceCommitment;
+
+  /// v3（CT）rangeproof（输出体内序列化）；null 视同空。
+  final Uint8List? rangeproof;
+
+  /// v3（CT）显式 null 金额（0x00 单字节）标记；仅解析时回填，
+  /// 用于往返序列化保真，构造交易时无需设置。
+  final bool valueIsNull;
+
+  NativeTxOut({
+    required this.value,
+    required this.scriptPubKey,
+    this.valueCommitment,
+    this.nonceCommitment,
+    this.rangeproof,
+    this.valueIsNull = false,
+  });
+
+  /// 是否盲化（承诺）输出。
+  bool get isConfidential => valueCommitment != null;
 }
 
 /// 花费输入所需的 prevout 数据（sighash 使用，交易体不含金额与脚本）。
@@ -73,6 +108,9 @@ class NativePrevOut {
 
 /// 交易编解码（varint / 序列化 / 解析）。
 class NativeTxCodec {
+  /// CT 交易版本号：v3 起输出按「承诺/nonce/rangeproof」布局序列化。
+  static const int ctVersion = 3;
+
   /// varint 编码（Bitcoin CompactSize）。
   static Uint8List encodeVarInt(int value) {
     if (value < 0xfd) return Uint8List.fromList([value]);
@@ -103,6 +141,19 @@ class NativeTxCodec {
     return out;
   }
 
+  /// v3 显式金额：8 字节**大端**（与链上 CConfidentialValue 一致，
+  /// 已经链上真实手续费输出 `000000000073ff50` → 7,602,000 micro = 0.07602
+  /// RCPU 实证，与节点 decoderawtransaction 一致）。
+  static Uint8List _be64(BigInt value) {
+    final out = Uint8List(8);
+    var v = value;
+    for (var i = 7; i >= 0; i--) {
+      out[i] = (v & BigInt.from(0xff)).toInt();
+      v >>= 8;
+    }
+    return out;
+  }
+
   /// 序列化交易；[dropWitness] 为 true 时输出无 witness 的标志位（CLTV/DEFAULT 之外
   /// 全部场景均可使用——原始序列化即为此形态）。
   static Uint8List serialize(NativeTx tx, {bool dropWitness = false}) {
@@ -113,18 +164,27 @@ class NativeTxCodec {
       b.add([0x00, 0x01]); // marker + flag
     }
     b.add(encodeVarInt(tx.inputs.length));
+    final ct = tx.version == ctVersion;
     for (final i in tx.inputs) {
       b.add(i.prevTxid);
       b.add(_le(i.prevVout, 4));
       b.add(encodeVarInt(i.scriptSig.length));
       b.add(i.scriptSig);
       b.add(_le(i.sequence, 4));
+      if (ct) {
+        // v3 每输入尾字段（观测恒为 0x00，已对照多笔链上交易）。
+        b.add([0x00]);
+      }
     }
     b.add(encodeVarInt(tx.outputs.length));
     for (final o in tx.outputs) {
-      b.add(_le64(o.value));
-      b.add(encodeVarInt(o.scriptPubKey.length));
-      b.add(o.scriptPubKey);
+      if (ct) {
+        _writeCtOutput(b, o);
+      } else {
+        b.add(_le64(o.value));
+        b.add(encodeVarInt(o.scriptPubKey.length));
+        b.add(o.scriptPubKey);
+      }
     }
     if (wit) {
       for (final i in tx.inputs) {
@@ -137,6 +197,89 @@ class NativeTxCodec {
     }
     b.add(_le(tx.locktime, 4));
     return b.toBytes();
+  }
+
+  /// 写出 v3（CT）输出：金额 || nonce || rangeproof || 脚本。
+  ///
+  /// 金额：承诺 33B 原样；显式为 `0x01 || 8B 大端`；显式 null 为 0x00。
+  /// nonce：承诺 33B 原样；空为 0x00。rangeproof 以 varbytes 写入（可空），
+  /// **位于 scriptPubKey 之前**（链上 CTxOut 自定义布局，已实证）。
+  static void _writeCtOutput(BytesBuilder b, NativeTxOut o) {
+    final vc = o.valueCommitment;
+    if (vc != null) {
+      if (vc.length != 33) {
+        throw const FormatException('CT 金额承诺须为 33B');
+      }
+      b.add(vc);
+    } else if (o.valueIsNull) {
+      b.add([0x00]);
+    } else {
+      b.add([0x01]);
+      b.add(_be64(o.value));
+    }
+    final nc = o.nonceCommitment;
+    if (nc != null) {
+      if (nc.length != 33) {
+        throw const FormatException('CT nonce 承诺须为 33B');
+      }
+      b.add(nc);
+    } else {
+      b.add([0x00]);
+    }
+    final rp = o.rangeproof ?? Uint8List(0);
+    b.add(encodeVarInt(rp.length));
+    b.add(rp);
+    b.add(encodeVarInt(o.scriptPubKey.length));
+    b.add(o.scriptPubKey);
+  }
+
+  /// 解析 v3（CT）输出：金额 || nonce || rangeproof || 脚本。
+  ///
+  /// 金额前缀：0x00 = 显式 null；0x01 = 显式 8B **大端**；0x08/0x09 = 33B 承诺。
+  /// nonce 前缀：0x00 = 空；0x02/0x03/0x04 = 33B 承诺。
+  /// rangeproof（varbytes）位于 scriptPubKey（varbytes）**之前**。
+  static NativeTxOut _readCtOutput(
+    Uint8List Function(int) take,
+    BigInt Function() takeBe64,
+    int Function() readVarInt,
+  ) {
+    BigInt value = BigInt.zero;
+    Uint8List? valueCommitment;
+    var valueIsNull = false;
+    final vtag = take(1)[0];
+    if (vtag == 0x00) {
+      valueIsNull = true;
+    } else if (vtag == 0x01) {
+      value = takeBe64();
+    } else if (vtag == 0x08 || vtag == 0x09) {
+      valueCommitment = Uint8List.fromList([vtag, ...take(32)]);
+    } else {
+      throw const FormatException('非法 CT 金额前缀');
+    }
+
+    Uint8List? nonceCommitment;
+    final ntag = take(1)[0];
+    if (ntag == 0x00) {
+      nonceCommitment = null;
+    } else if (ntag == 0x02 || ntag == 0x03 || ntag == 0x04) {
+      nonceCommitment = Uint8List.fromList([ntag, ...take(32)]);
+    } else {
+      throw const FormatException('非法 CT nonce 前缀');
+    }
+
+    final rpLen = readVarInt();
+    final rangeproof = take(rpLen);
+    final scriptLen = readVarInt();
+    final scriptPubKey = take(scriptLen);
+
+    return NativeTxOut(
+      value: value,
+      scriptPubKey: scriptPubKey,
+      valueCommitment: valueCommitment,
+      nonceCommitment: nonceCommitment,
+      rangeproof: rpLen > 0 ? rangeproof : null,
+      valueIsNull: valueIsNull,
+    );
   }
 
   /// 解析交易 hex（可带 witness）。
@@ -166,6 +309,16 @@ class NativeTxCodec {
       return v;
     }
 
+    /// v3 显式金额：8 字节大端（链上 CConfidentialValue 布局）。
+    BigInt takeBe64() {
+      final bytes = take(8);
+      var v = BigInt.zero;
+      for (var i = 0; i < 8; i++) {
+        v = (v << 8) | BigInt.from(bytes[i]);
+      }
+      return v;
+    }
+
     int takeLe(int n) {
       final bytes = take(n);
       var v = 0;
@@ -184,6 +337,7 @@ class NativeTxCodec {
     }
 
     final version = takeLe(4);
+    final ct = version == ctVersion;
 
     var inputCount = readVarInt();
     var hasWitness = false;
@@ -204,6 +358,13 @@ class NativeTxCodec {
       final scriptLen = readVarInt();
       final scriptSig = take(scriptLen);
       final sequence = takeLe(4);
+      if (ct) {
+        // v3 每输入尾字段（观测恒为 0x00；helper 构造与链上已确认交易一致）。
+        final tail = take(1)[0];
+        if (tail != 0x00) {
+          throw const FormatException('非法 v3 输入尾字节');
+        }
+      }
       inputs.add(NativeTxIn(
         prevTxid: prevTxid,
         prevVout: prevVout,
@@ -215,10 +376,14 @@ class NativeTxCodec {
     final outputCount = readVarInt();
     final outputs = <NativeTxOut>[];
     for (var i = 0; i < outputCount; i++) {
-      final value = takeLe64();
-      final scriptLen = readVarInt();
-      final scriptPubKey = take(scriptLen);
-      outputs.add(NativeTxOut(value: value, scriptPubKey: scriptPubKey));
+      if (ct) {
+        outputs.add(_readCtOutput(take, takeBe64, readVarInt));
+      } else {
+        final value = takeLe64();
+        final scriptLen = readVarInt();
+        final scriptPubKey = take(scriptLen);
+        outputs.add(NativeTxOut(value: value, scriptPubKey: scriptPubKey));
+      }
     }
 
     if (hasWitness) {
