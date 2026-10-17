@@ -171,6 +171,7 @@ class AppStrings {
   final String insufficientWithFee;
   final String feeUnderestimated;
   final String ctInputMismatch;
+  final String ctOutputMismatch;
   final String ctHexTooShort;
   final String ctPayloadInvalid;
   final String ctPubInvalid;
@@ -325,6 +326,7 @@ class AppStrings {
     this.insufficientWithFee = '余额不足（含手续费）',
     this.feeUnderestimated = '手续费估算不足，请重试',
     this.ctInputMismatch = 'CT 构造返回的输入数不一致',
+    this.ctOutputMismatch = '交易输出与付款意图不符，已中止签名以防资金重定向',
     this.ctHexTooShort = 'CT 交易 hex 过短',
     this.ctPayloadInvalid = '隐私地址 payload 非法（应为 0x00||keyid||pub）',
     this.ctPubInvalid = '隐私地址公钥非法（须为压缩点）',
@@ -518,6 +520,8 @@ class AppStrings {
     insufficientWithFee: 'Insufficient balance (including fee)',
     feeUnderestimated: 'Fee underestimated, please retry',
     ctInputMismatch: 'CT build returned mismatched input count',
+    ctOutputMismatch:
+        'Transaction outputs do not match the payment intent; signing aborted',
     ctHexTooShort: 'CT transaction hex too short',
     ctPayloadInvalid: 'Invalid private address payload (expected 0x00||keyid||pub)',
     ctPubInvalid: 'Invalid private address public key (must be compressed)',

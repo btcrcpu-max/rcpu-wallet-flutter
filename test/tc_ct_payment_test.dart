@@ -176,16 +176,43 @@ void main() {
 
   final recipient = Derivation(recipientMnemonic).deriveNativePrivateAddress();
 
-  /// 假 helper 的「无 witness」交易：version || vin(1) || vout(3: 收款/找零/fee) || locktime。
-  final bodyHex = '01${_rep('11', 32)}' // prev txid（内部字节序）
-      '00000000' // vout 0
-      '00' // scriptSig 空（P2WPKH）
-      'fdffffff' // sequence
-      '03'
-      '000000000000000016' '0014${_rep('aa', 20)}' // 收款 CT 输出
-      '000000000000000016' '0014${_rep('bb', 20)}' // 找零 CT 输出
-      '000000000000000000'; // 显式 fee 输出（空脚本）
-  final noWitHex = '03000000${bodyHex}00000000';
+  // 真实收款/找零脚本（payment_service 锚定校验要求服务器返回的交易使用
+  // 与本地意图一致的输出脚本，fake 必须如实模拟该行为）。
+  final recipientSpk = '0014${_hexOfList(Derivation.hash160(Uint8List.fromList(_pubOf(recipient.value))))}';
+  final changeSpk = '0014${_hexOf(Derivation.hash160(sig.compressedPubKey(ctPriv)))}';
+
+  /// 假 helper 的「无 witness」交易：version || vin(1) || vout(收款/找零?/fee) || locktime。
+  String fakeNoWitHex({
+    required String prevTxidHex, // 64 hex（内部字节序）
+    required int vout,
+    required String recipientSpkHex,
+    String? changeSpkHex,
+  }) {
+    final outs = StringBuffer()
+      ..write('000000000000000016$recipientSpkHex'); // 收款 CT 输出（值盲化为 0）
+    var n = 1;
+    if (changeSpkHex != null) {
+      outs.write('000000000000000016$changeSpkHex'); // 找零 CT 输出
+      n++;
+    }
+    outs.write('000000000000000000'); // 显式 fee 输出（空脚本）
+    n++;
+    return '03000000'
+        '01$prevTxidHex${vout.toRadixString(16).padLeft(8, '0')}'
+        '00' // scriptSig 空（P2WPKH）
+        'fdffffff' // sequence
+        '${n.toRadixString(16).padLeft(2, '0')}'
+        '$outs'
+        '00000000';
+  }
+
+  final noWitHex = fakeNoWitHex(
+    prevTxidHex: _rep('11', 32),
+    vout: 0,
+    recipientSpkHex: recipientSpk,
+    changeSpkHex: changeSpk,
+  );
+  final bodyHex = noWitHex.substring(8, noWitHex.length - 8);
 
   test('CT 收款：明文输入 → rcpux1 盲化输出 + 自身 CT 找零 + 本地签名拼接 witness', () async {
     final srv = _FakeCtServer();
@@ -295,7 +322,12 @@ void main() {
       return {'amount_micro': 200000000, 'blind_hex': _rep('aa', 32)};
     };
     srv.buildHandler = (_) => {
-          'tx_no_witness_hex': noWitHex,
+          'tx_no_witness_hex': fakeNoWitHex(
+            prevTxidHex: _rep('22', 32),
+            vout: 1,
+            recipientSpkHex: recipientSpk,
+            changeSpkHex: changeSpk,
+          ),
           'vin': 1,
           'vout': 3,
           'fee_micro': 7290000,

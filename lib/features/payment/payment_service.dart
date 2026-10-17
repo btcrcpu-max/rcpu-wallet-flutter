@@ -305,6 +305,21 @@ class PaymentService {
       }
     }
 
+    // 5b) 安全校验：锚定未签名交易与本地付款意图一致（fail-closed）。
+    // CT 协处理器经明文 HTTP 返回待签交易与 sighash 摘要，若不校验，路径
+    // 攻击者可替换收款脚本并附上匹配摘要诱导设备签名（资金重定向）。逐项：
+    // 1. 输入 outpoint 集合 == 本地选择的输入；
+    // 2. 恰好 1 个输出脚本 == 收款脚本；change>0 时恰好 1 个 == 找零脚本；
+    // 3. 其余输出（显式手续费）明文价值 ≤ 3×reservedFee。
+    _verifyCtTxAnchors(
+      txNoWitnessHex: built.txNoWitnessHex,
+      selected: selected,
+      recipientScriptHex: recipientScriptHex,
+      changeScriptHex: changeScriptHex,
+      changeMicro: change,
+      reservedFee: reservedFee,
+    );
+
     // 6) 逐输入签名（明文输入用明文私钥，CT 输入用隐私私钥），拼 witness。
     if (built.vin != selected.length) {
       throw StateError(AppStrings.current.ctInputMismatch);
@@ -319,6 +334,75 @@ class PaymentService {
       ]);
     }
     return _spliceWitness(built.txNoWitnessHex, stacks);
+  }
+
+  /// 锚定校验：服务器返回的未签名交易必须与本地付款意图一致，任一不符
+  /// 即抛 [StateError] 中止签名（见调用点注释）。多重集比较容忍输入重排。
+  void _verifyCtTxAnchors({
+    required String txNoWitnessHex,
+    required List<_CtInput> selected,
+    required String recipientScriptHex,
+    required String changeScriptHex,
+    required int changeMicro,
+    required int reservedFee,
+  }) {
+    final tx = NativeTxCodec.parseHex(txNoWitnessHex);
+
+    // 1) 输入一致性。
+    if (tx.inputs.length != selected.length) {
+      throw StateError(AppStrings.current.ctInputMismatch);
+    }
+    bool sameBytes(Uint8List a, Uint8List b) {
+      if (a.length != b.length) return false;
+      for (var i = 0; i < a.length; i++) {
+        if (a[i] != b[i]) return false;
+      }
+      return true;
+    }
+    final used = List<bool>.filled(selected.length, false);
+    for (final inp in tx.inputs) {
+      var hit = false;
+      for (var j = 0; j < selected.length; j++) {
+        if (!used[j] &&
+            sameBytes(inp.prevTxid, selected[j].prevTxid) &&
+            inp.prevVout == selected[j].vout) {
+          used[j] = true;
+          hit = true;
+          break;
+        }
+      }
+      if (!hit) {
+        throw StateError(AppStrings.current.ctOutputMismatch);
+      }
+    }
+
+    // 2) 输出锚定：收款/找零脚本必须恰好出现预期次数。
+    var recipientCount = 0;
+    var changeCount = 0;
+    final extraIdx = <int>[];
+    for (var i = 0; i < tx.outputs.length; i++) {
+      final h = NativeTxCodec.bytesToHex(tx.outputs[i].scriptPubKey);
+      if (h == recipientScriptHex) {
+        recipientCount++;
+      } else if (h == changeScriptHex) {
+        changeCount++;
+      } else {
+        extraIdx.add(i);
+      }
+    }
+    final expectChange = changeMicro > 0 ? 1 : 0;
+    if (recipientCount != 1 || changeCount != expectChange) {
+      throw StateError(AppStrings.current.ctOutputMismatch);
+    }
+
+    // 3) 其余输出 = 显式手续费（协议固定 1 个）：明文价值不得超预算。
+    if (extraIdx.length != 1) {
+      throw StateError(AppStrings.current.ctOutputMismatch);
+    }
+    final feeOut = tx.outputs[extraIdx.single];
+    if (feeOut.value > BigInt.from(reservedFee * 3)) {
+      throw StateError(AppStrings.current.ctOutputMismatch);
+    }
   }
 
   /// 构造 CT 输出列表：收款 CT + 可选找零 CT。
