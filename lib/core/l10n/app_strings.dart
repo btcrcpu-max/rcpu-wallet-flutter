@@ -57,6 +57,8 @@ class AppStrings {
   final String network;
   final String rpcNode;
   final String rpcNodeValue;
+  final String ctOnlyAddr;
+  final String plainAddrPoolTitle;
   final String about;
   final String version;
   final String walletSection;
@@ -272,6 +274,8 @@ class AppStrings {
     this.privateSeg = '隐私 rcpux1',
     this.privateAddrHint = '隐私地址（推荐收款）',
     this.plainAddrHint = '明文地址（仅限桥存款）',
+    this.ctOnlyAddr = '仅支持机密付款：收款地址须为 rcpux1 开头的机密地址',
+    this.plainAddrPoolTitle = '矿池收款（明文地址）',
     this.addressCopied = '地址已复制',
     this.amountOptional = '金额（可选）',
     this.paymentProtocol = '支付协议',
@@ -459,6 +463,8 @@ class AppStrings {
     privateSeg: 'Private rcpux1',
     privateAddrHint: 'Private address (recommended)',
     plainAddrHint: 'Plain address (bridge deposits only)',
+    ctOnlyAddr: 'Confidential-only: the recipient must be an rcpux1 confidential address',
+    plainAddrPoolTitle: 'Pool payouts (plain address)',
     addressCopied: 'Address copied',
     amountOptional: 'Amount (optional)',
     paymentProtocol: 'Payment URI',

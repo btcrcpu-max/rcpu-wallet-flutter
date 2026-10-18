@@ -163,7 +163,7 @@ class CtHelperClient {
 
   CtHelperClient({this.endpoint = 'https://rcpu.cloud/ct'}) {
     _dio = Dio(BaseOptions(
-      connectTimeout: const Duration(seconds: 10),
+      connectTimeout: const Duration(seconds: 30),
       // 盲化 + range proof 生成较重，放宽至 60s。
       receiveTimeout: const Duration(seconds: 60),
       headers: {'Content-Type': 'application/json'},
@@ -171,6 +171,19 @@ class CtHelperClient {
   }
 
   Future<Map<String, dynamic>> _post(
+      String sub, Map<String, dynamic> body) async {
+    // 境外线路抖动：连接类错误线性退避重试 2 次（盲化请求无副作用）。
+    for (var attempt = 1;; attempt++) {
+      try {
+        return await _postOnce(sub, body);
+      } on CtHelperException catch (e) {
+        if (!e.transient || attempt >= 3) rethrow;
+        await Future<void>.delayed(Duration(milliseconds: 800 * attempt));
+      }
+    }
+  }
+
+  Future<Map<String, dynamic>> _postOnce(
       String sub, Map<String, dynamic> body) async {
     final Response<dynamic> resp;
     try {

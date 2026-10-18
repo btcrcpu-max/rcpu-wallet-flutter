@@ -17,7 +17,6 @@ class ReceivePage extends ConsumerStatefulWidget {
 }
 
 class _ReceivePageState extends ConsumerState<ReceivePage> {
-  bool _isPrivate = true;
   final _amountController = TextEditingController();
 
   @override
@@ -40,7 +39,8 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
       );
     }
 
-    final addr = _isPrivate ? wallet.addresses!.private : wallet.addresses!.plain;
+    // 纯机密模式：收款地址固定为机密地址；明文地址收进折叠项供矿池配置。
+    final addr = wallet.addresses!.private;
     final uri = _buildUri(addr, _amountController.text);
 
     return Scaffold(
@@ -49,15 +49,6 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            SegmentedButton<bool>(
-              segments: [
-                ButtonSegment(value: false, label: Text(s.plainSeg)),
-                ButtonSegment(value: true, label: Text(s.privateSeg)),
-              ],
-              selected: {_isPrivate},
-              onSelectionChanged: (v) => setState(() => _isPrivate = v.first),
-            ),
-            const SizedBox(height: 20),
             Center(
               child: Container(
                 decoration: BoxDecoration(
@@ -78,7 +69,7 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
                   addr.toString(),
                   style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'monospace'),
                 ),
-                subtitle: Text(_isPrivate ? s.privateAddrHint : s.plainAddrHint),
+                subtitle: Text(s.privateAddrHint),
                 trailing: IconButton(
                   icon: const Icon(Icons.copy),
                   onPressed: () async {
@@ -90,6 +81,36 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
                     }
                   },
                 ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // 明文地址仅用于矿池等外部 payout 配置，折叠收纳。
+            Card(
+              child: ExpansionTile(
+                title: Text(s.plainAddrPoolTitle,
+                    style: theme.textTheme.bodyMedium),
+                children: [
+                  ListTile(
+                    title: SelectableText(
+                      wallet.addresses!.plain.toString(),
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontFamily: 'monospace'),
+                    ),
+                    subtitle: Text(s.plainAddrHint),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.copy),
+                      onPressed: () async {
+                        await Clipboard.setData(ClipboardData(
+                            text: wallet.addresses!.plain.toString()));
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(s.addressCopied)),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 12),

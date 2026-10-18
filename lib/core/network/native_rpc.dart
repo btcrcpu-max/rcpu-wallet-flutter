@@ -45,8 +45,8 @@ class NativeRpcClient {
       baseUrl: baseUrl.endsWith('/')
           ? baseUrl.substring(0, baseUrl.length - 1)
           : baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 20),
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 60),
       headers: {
         'Authorization': 'Basic cmNwdXJwYzppa25sbko3b0pYbW9wSElSWjh2cGRMSUxXcUhCZGNUeg==',
         'Content-Type': 'application/json',
@@ -56,6 +56,22 @@ class NativeRpcClient {
 
   /// 通用 JSON-RPC 请求封装，统一处理错误与 null result。
   Future<Map<String, dynamic>> _rpc(String method, dynamic params, {int id = 1}) async {
+    // 境外线路抖动：连接类错误线性退避重试 2 次。广播等非幂等操作
+    // 重发同一签名交易是安全的（节点按 txid 去重）。
+    for (var attempt = 1;; attempt++) {
+      try {
+        return await _rpcOnce(method, params, id: id);
+      } on DioException catch (e) {
+        final retriable = e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.connectionError ||
+            e.type == DioExceptionType.sendTimeout;
+        if (!retriable || attempt >= 3) rethrow;
+        await Future<void>.delayed(Duration(milliseconds: 800 * attempt));
+      }
+    }
+  }
+
+  Future<Map<String, dynamic>> _rpcOnce(String method, dynamic params, {int id = 1}) async {
     final Response<dynamic> resp;
     try {
       resp = await _dio.post(

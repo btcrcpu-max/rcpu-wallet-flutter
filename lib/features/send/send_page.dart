@@ -70,28 +70,17 @@ class _SendPageState extends ConsumerState<SendPage> {
       _error = null;
     });
     try {
-      // 按收款地址形态选择估算口径（地址未填/明文 → 明文口径）。
-      var toPrivate = false;
-      final toText = _addressCtrl.text.trim();
-      if (toText.isNotEmpty) {
-        try {
-          toPrivate = Address.parse(toText).isPrivate;
-        } catch (_) {
-          // 地址非法不阻塞估算，按明文口径。
-        }
-      }
+      // 纯机密模式：最大付款一律按 CT 口径（明文 + CT 输入合并估算）。
       String? ctPrivHex;
       String? privAddr;
-      if (toPrivate) {
-        final mnemonic = await ref.read(secureStoreProvider).readMnemonic();
-        if (mnemonic != null) {
-          ctPrivHex = Derivation(mnemonic)
-              .deriveNativePrivateKey()
-              .spendPriv
-              .map((b) => b.toRadixString(16).padLeft(2, '0'))
-              .join();
-          privAddr = addrs.private.value;
-        }
+      final mnemonic = await ref.read(secureStoreProvider).readMnemonic();
+      if (mnemonic != null) {
+        ctPrivHex = Derivation(mnemonic)
+            .deriveNativePrivateKey()
+            .spendPriv
+            .map((b) => b.toRadixString(16).padLeft(2, '0'))
+            .join();
+        privAddr = addrs.private.value;
       }
       final maxMicro =
           await ref.read(paymentServiceProvider).estimateMaxSendableMicro(
@@ -172,6 +161,11 @@ class _SendPageState extends ConsumerState<SendPage> {
       final addr = Address.parse(address);
       if (_asset == 'native' && !addr.isNative) {
         setState(() => _error = s.nativeAddrPrefix);
+        return;
+      }
+      if (_asset == 'native' && !addr.isPrivate) {
+        // 纯机密模式：原生资产仅受理机密地址。
+        setState(() => _error = s.ctOnlyAddr);
         return;
       }
       if (_asset == 'wrcpu' && !addr.isEvm) {
