@@ -91,6 +91,15 @@ class _FakeNativeRpc implements NativeRpcClient {
   Future<int> getBlockHeight() async => 0;
 
   @override
+  String? scriptHexForAddress(String address) => null;
+
+  @override
+  Future<List<ScannedVout>> getBlockVouts(int height) async => const [];
+
+  @override
+  Future<List<ScannedVout>> getMempoolVouts({int cap = 200}) async => const [];
+
+  @override
   Future<CtResolveResult> resolveCt({
     required String txHex,
     required String viewSeed,
