@@ -207,12 +207,9 @@ class _WalletInitPageState extends ConsumerState<WalletInitPage> {
           ),
         );
         if (enable == true) {
-          final ok = await bio.authenticate(reason: s.bioEnableVerifyReason);
-          if (ok) {
-            await bio.setEnabled(true);
-          } else if (mounted) {
-            _showError(s.bioEnableFailedHint);
-          }
+          // 开启保护无需先验证身份（锁定用的是机主自己已录入的指纹/人脸）；
+          // 部分机型 authenticate 认证成功仍返回 false，会导致永远无法开启。
+          await bio.setEnabled(true);
         }
       }
     } catch (_) {

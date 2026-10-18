@@ -44,24 +44,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final bio = ref.read(biometricAuthProvider);
     final s = ref.read(appStringsProvider);
     if (value) {
-      // 直接发起系统验证：canCheckBiometrics / getAvailableBiometrics 在
-      // 部分机型上误报（付款指纹可用的机器上返回不支持/未录入），导致
-      // 开关永远无法开启。authenticate 与付款同一通路，设备不支持时会
-      // 快速失败并提示。
+      // 开启 = 为本机加一层保护（锁定用的是机主自己已录入的指纹/人脸），
+      // 无需先验证身份。此前先 authenticate 再写开关，在部分机型上认证
+      // 成功仍返回 false，导致开关开了又跳回关闭。
+      await bio.setEnabled(true);
+      if (mounted) setState(() => _bioEnabled = true);
+    } else {
+      // 关闭 = 移除保护，需验证身份，防止他人趁手机未锁时关掉。
       setState(() => _bioLoading = true);
-      final ok = await bio.authenticate(reason: s.bioEnableReason);
+      final ok = await bio.authenticate(reason: s.bioDisableReason);
       setState(() => _bioLoading = false);
       if (ok) {
-        await bio.setEnabled(true);
-        if (mounted) setState(() => _bioEnabled = true);
+        await bio.setEnabled(false);
+        if (mounted) setState(() => _bioEnabled = false);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(s.bioFailed)),
         );
       }
-    } else {
-      await bio.setEnabled(false);
-      if (mounted) setState(() => _bioEnabled = false);
     }
   }
 
@@ -238,18 +238,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           if (wallet.isReady && wallet.addresses != null) ...[
             _SettingsSection(title: s.addressManagement, children: [
               ListTile(
-                leading: const Icon(Icons.key),
-                title: Text(s.plainAddress),
-                subtitle: SelectableText(wallet.addresses!.plain.toString()),
-                trailing: IconButton(
-                  icon: const Icon(Icons.copy),
-                  onPressed: () => _copyAddress(
-                    wallet.addresses!.plain.toString(),
-                    s.plainAddress,
-                  ),
-                ),
-              ),
-              ListTile(
                 leading: const Icon(Icons.visibility_off),
                 title: Text(s.privateAddress),
                 subtitle: SelectableText(wallet.addresses!.private.toString()),
@@ -258,18 +246,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   onPressed: () => _copyAddress(
                     wallet.addresses!.private.toString(),
                     s.privateAddress,
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.currency_exchange),
-                title: Text(s.bscAddress),
-                subtitle: SelectableText(wallet.addresses!.bsc.toString()),
-                trailing: IconButton(
-                  icon: const Icon(Icons.copy),
-                  onPressed: () => _copyAddress(
-                    wallet.addresses!.bsc.toString(),
-                    s.bscAddress,
                   ),
                 ),
               ),

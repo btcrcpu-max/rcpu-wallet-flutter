@@ -67,6 +67,7 @@ class AppStrings {
   final String bioUnsupported;
   final String bioNotEnrolled;
   final String bioEnableReason;
+  final String bioDisableReason;
   final String bioFailed;
   final String exportMnReason;
   final String authFailedNoExport;
@@ -233,6 +234,7 @@ class AppStrings {
     this.bioUnsupported = '当前设备不支持生物识别',
     this.bioNotEnrolled = '系统未录入指纹/人脸，请先在系统设置中添加',
     this.bioEnableReason = '开启生物识别以解锁钱包',
+    this.bioDisableReason = '验证身份以关闭生物识别保护',
     this.bioFailed = '生物识别验证失败',
     this.exportMnReason = '验证身份以导出助记词',
     this.authFailedNoExport = '身份验证失败，无法导出助记词',
@@ -420,6 +422,7 @@ class AppStrings {
     bioNotEnrolled:
         'No fingerprint/face enrolled. Please add one in system settings first',
     bioEnableReason: 'Enable biometrics to unlock your wallet',
+    bioDisableReason: 'Verify to disable biometric protection',
     bioFailed: 'Biometric authentication failed',
     exportMnReason: 'Verify your identity to export the recovery phrase',
     authFailedNoExport: 'Authentication failed. Recovery phrase not exported',
