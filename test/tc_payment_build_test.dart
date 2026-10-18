@@ -17,12 +17,12 @@ import 'package:rcpu_wallet/core/models/tx_record.dart';
 import 'package:rcpu_wallet/core/network/native_rpc.dart';
 import 'package:rcpu_wallet/features/payment/payment_service.dart';
 
-/// TC-PAY-01 _buildTxHex 交易构造（真实 UTXO 选择 / 输出 / fee / 降级）
+/// TC-PAY-01 buildNativeTxHex 交易构造（真实 UTXO 选择 / 输出 / fee / 降级）
 /// + TC-PAY-02 get_utxos 请求形态。
 ///
-/// 通过 `PaymentService.confirmAndPay`（真实 `SignatureService` + fake 指纹/RPC）
-/// 走完整「构造 → 签名 → 广播」链路；广播侧记录已签名交易 hex 供独立解析断言，
-/// 复用真实 `Derivation` 派生密钥组（地址与私钥同源）。
+/// v0.4.7 纯机密模式：明文目标地址由 `confirmAndPay` 直接拒绝（策略锁定用例）；
+/// 构造闭环改经公开 `buildNativeTxHex` + 真实 `SignatureService` 直测，
+/// 广播侧不再触发。复用真实 `Derivation` 派生密钥组（地址与私钥同源）。
 
 class _FakeBiometric implements BiometricAuth {
   final bool result;
@@ -117,7 +117,32 @@ void main() {
     );
   }
 
-  group('TC-PAY-01 明文收款交易构造闭环', () {
+  group('TC-PAY-01 原生交易构造闭环（纯机密模式：构造器直测）', () {
+    // v0.4.7 起原生付款仅受理机密地址：confirmAndPay 对明文目标直接拒绝；
+    // 明文 v2 构造器（buildNativeTxHex）保留（wRCPU 桥路径复用），
+    // 本组改为直测构造 + signNative 闭环，并锁定纯机密拒绝策略。
+
+    test('明文目标地址 → 拒绝（纯机密策略，不构造不广播）', () async {
+      final rpc = _RecordingNativeRpc([
+        utxo(150000000, p2trSpkHex),
+      ]);
+      final service = PaymentService(
+        biometric: _FakeBiometric(true),
+        signature: SignatureService(),
+        nativeRpc: rpc,
+      );
+      final result = await service.confirmAndPay(
+        toAddress: plainAddress.value,
+        amountMicro: 100000000,
+        privateKeyHex: privHex,
+        assetType: 'native',
+        fromAddress: plainAddress.value,
+      );
+      expect(result.ok, false);
+      expect(result.error, contains('仅支持机密付款'));
+      expect(rpc.lastBroadcastHex, isNull);
+    });
+
     test('单输入：输出金额 / 找零 / fee / P2WPKH 脚本 / witness 64B', () async {
       final rpc = _RecordingNativeRpc([
         utxo(150000000, p2trSpkHex), // 1.5 RCPU
@@ -127,17 +152,17 @@ void main() {
         signature: SignatureService(),
         nativeRpc: rpc,
       );
-      final result = await service.confirmAndPay(
+      final built = await service.buildNativeTxHex(
         toAddress: plainAddress.value,
         amountMicro: 100000000, // 1.0 RCPU
-        privateKeyHex: privHex,
-        assetType: 'native',
         fromAddress: plainAddress.value,
+        utxos: rpc.utxos,
+        feeRateMicroPerByte: PaymentService.defaultFeeRateMicroPerByte,
       );
-      expect(result.ok, true);
-      expect(rpc.lastBroadcastHex, isNotNull);
+      final signed = await SignatureService()
+          .signNative(built.txHex, privHex, prevOuts: built.prevOuts);
 
-      final tx = NativeTxCodec.parseHex(rpc.lastBroadcastHex!);
+      final tx = NativeTxCodec.parseHex(signed);
       expect(tx.inputs.length, 1);
       expect(tx.outputs.length, 2);
 
@@ -174,15 +199,16 @@ void main() {
         signature: SignatureService(),
         nativeRpc: rpc,
       );
-      final result = await service.confirmAndPay(
+      final built = await service.buildNativeTxHex(
         toAddress: plainAddress.value,
         amountMicro: 120000000, // 1.2
-        privateKeyHex: privHex,
-        assetType: 'native',
         fromAddress: plainAddress.value,
+        utxos: rpc.utxos,
+        feeRateMicroPerByte: PaymentService.defaultFeeRateMicroPerByte,
       );
-      expect(result.ok, true);
-      final tx = NativeTxCodec.parseHex(rpc.lastBroadcastHex!);
+      final signed = await SignatureService()
+          .signNative(built.txHex, privHex, prevOuts: built.prevOuts);
+      final tx = NativeTxCodec.parseHex(signed);
       // 升序累加：0.5 + 0.6 = 1.1 仍不足（+fee）→ 需 3 输入
       expect(tx.inputs.length, 3);
       // 交易体不含输入金额；通过输入数 + 输出总额守恒间接验证选择正确：
@@ -201,15 +227,16 @@ void main() {
         signature: SignatureService(),
         nativeRpc: rpc,
       );
-      final result = await service.confirmAndPay(
-        toAddress: plainAddress.value,
-        amountMicro: 100000000, // 1.0
-        privateKeyHex: privHex,
-        assetType: 'native',
-        fromAddress: plainAddress.value,
+      await expectLater(
+        service.buildNativeTxHex(
+          toAddress: plainAddress.value,
+          amountMicro: 100000000, // 1.0
+          fromAddress: plainAddress.value,
+          utxos: rpc.utxos,
+          feeRateMicroPerByte: PaymentService.defaultFeeRateMicroPerByte,
+        ),
+        throwsA(predicate((e) => e.toString().contains('余额不足'))),
       );
-      expect(result.ok, false);
-      expect(result.error, contains('余额不足'));
       expect(rpc.lastBroadcastHex, isNull);
     });
 
@@ -234,7 +261,7 @@ void main() {
       expect(rpc.lastBroadcastHex, isNull);
     });
 
-    test('明文 P2WPKH 输入 → 成功构造签名广播（BIP143/ECDSA 路径）', () async {
+    test('明文 P2WPKH 输入 → 成功构造签名（BIP143/ECDSA 路径）', () async {
       // P2WPKH（0x00 0x14 || h160）为 BIP84 明文地址的链上实际形态，
       // v0.3.6 起与 P2TR 并列为可签名输入。
       final p2wpkhSpk = '0014${'11' * 20}';
@@ -246,16 +273,21 @@ void main() {
         signature: SignatureService(),
         nativeRpc: rpc,
       );
-      final result = await service.confirmAndPay(
+      final built = await service.buildNativeTxHex(
         toAddress: plainAddress.value,
         amountMicro: 100000000,
-        privateKeyHex: privHex,
-        assetType: 'native',
         fromAddress: plainAddress.value,
+        utxos: rpc.utxos,
+        feeRateMicroPerByte: PaymentService.defaultFeeRateMicroPerByte,
       );
-      expect(result.ok, true);
-      expect(result.txid, isNotNull);
-      expect(rpc.lastBroadcastHex, isNotNull);
+      final signed = await SignatureService()
+          .signNative(built.txHex, privHex, prevOuts: built.prevOuts);
+      final tx = NativeTxCodec.parseHex(signed);
+      expect(tx.hasWitness, true);
+      // P2WPKH witness = [DER 签名(+0x01 sighash), 33B 压缩公钥]
+      expect(tx.inputs[0].witness.length, 2);
+      expect(tx.inputs[0].witness[1].length, 33);
+      expect(tx.inputs[0].witness[0].last, 0x01);
     });
 
     test('锁定后未确认输出不可花费（confirmed=false 被过滤）', () async {
@@ -272,15 +304,16 @@ void main() {
         signature: SignatureService(),
         nativeRpc: rpc,
       );
-      final result = await service.confirmAndPay(
-        toAddress: plainAddress.value,
-        amountMicro: 100000000,
-        privateKeyHex: privHex,
-        assetType: 'native',
-        fromAddress: plainAddress.value,
+      await expectLater(
+        service.buildNativeTxHex(
+          toAddress: plainAddress.value,
+          amountMicro: 100000000,
+          fromAddress: plainAddress.value,
+          utxos: rpc.utxos,
+          feeRateMicroPerByte: PaymentService.defaultFeeRateMicroPerByte,
+        ),
+        throwsA(predicate((e) => e.toString().contains('没有可花费'))),
       );
-      expect(result.ok, false);
-      expect(result.error, contains('没有可花费的 P2WPKH/P2TR UTXO'));
       expect(rpc.lastBroadcastHex, isNull);
     });
   });

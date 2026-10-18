@@ -133,7 +133,7 @@ class PaymentService {
           subtractFee: subtractFeeFromAmount,
         );
       } else {
-        final built = await _buildTxHex(
+        final built = await buildNativeTxHex(
           toAddress: toAddress,
           amountMicro: amountMicro,
           fromAddress: fromAddress,
@@ -575,7 +575,8 @@ class PaymentService {
   /// - **隐私收款**（`rcpux1`）：由 [confirmAndPay] 分派至 CT 通路，此处
   ///   fail-closed 抛 [UnimplementedError]（不静默降明文）。
   /// - [txHex] 为**未签名**交易；[prevOuts] 与输入一一对应。
-  Future<BuiltNativeTx> _buildTxHex({
+  /// - 公开可见：TC-PAY-01 直测；wRCPU 桥路径复用。
+  Future<BuiltNativeTx> buildNativeTxHex({
     required String toAddress,
     required int amountMicro,
     required String? fromAddress,
