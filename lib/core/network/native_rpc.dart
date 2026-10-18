@@ -237,7 +237,10 @@ class NativeRpcClient {
           return NativeUtxo(
             prevTxid: Uint8List.fromList(txidBytes.reversed.toList()),
             vout: (json['vout'] as num?)?.toInt() ?? 0,
-            amountMicro: (((json['amount'] as num?)?.toDouble() ?? 0.0) * 1e8).toInt(),
+            // 金额换算不能用 float×1e8：二进制浮点无法精确表示十进制
+            // 小数，截断会差 1 micro（如 2.07428001 → 207428000），导致
+            // BIP143 sighash 金额与链上不一致、签名无效（-26 NULLFAIL）。
+            amountMicro: _microFromAmount((json['amount'] as num?) ?? 0),
             scriptPubKey: spkHex,
             confirmed: true,
             // 隐私地址下的输出均为 CT（scantxoutset 读金额为 0，需 unblind）。
@@ -346,9 +349,35 @@ class NativeRpcClient {
     }
   }
 
+  /// 十进制字符串 → micro（纯整数路径，不经过 double）。
+  ///
+  /// 旧实现 `double.tryParse(raw) * 1e8 ~/ 1` 受二进制浮点误差影响
+  /// 会差 1 micro（如 "0.07428001" → 7428000），改用逐位十进制解析。
   static int _parseMicro(String raw) {
-    return (double.tryParse(raw) ?? 0.0) * 1e8 ~/ 1;
+    final s = raw.trim();
+    if (s.isEmpty) return 0;
+    final neg = s.startsWith('-');
+    final body = neg ? s.substring(1) : s;
+    final dot = body.indexOf('.');
+    final wholeStr = dot < 0 ? body : body.substring(0, dot);
+    var fracStr = dot < 0 ? '' : body.substring(dot + 1);
+    if (fracStr.length > 8) fracStr = fracStr.substring(0, 8);
+    final whole = int.tryParse(wholeStr.isEmpty ? '0' : wholeStr) ?? 0;
+    final frac = int.tryParse(fracStr.padRight(8, '0')) ?? 0;
+    final micro = whole * 100000000 + frac;
+    return neg ? -micro : micro;
   }
+
+  /// JSON number → micro（scantxoutset 的 amount 经 jsonDecode 已是 double）。
+  ///
+  /// 不能 `amount * 1e8` 截断（浮点误差，见上）。`toStringAsFixed(8)`
+  /// 按十进制正确舍入到 8 位小数，还原节点打印的精确十进制值后再解析；
+  /// 金额 < 1e13 RCPU 时 double 表示误差远小于 0.5 micro，舍入必然正确。
+  static int _microFromAmount(num amount) => _parseMicro(amount.toStringAsFixed(8));
+
+  /// 供单元测试回归锁定（见 test/regtest_e2e_test.dart "C unit"）。
+  static int parseMicroForTest(String raw) => _parseMicro(raw);
+  static int microFromAmountForTest(num amount) => _microFromAmount(amount);
 
   static Uint8List _hexToBytes(String hex) {
     final h = hex.trim().startsWith('0x') ? hex.trim().substring(2) : hex.trim();
