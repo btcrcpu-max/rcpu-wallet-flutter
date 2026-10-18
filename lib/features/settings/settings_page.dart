@@ -47,8 +47,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       // 开启 = 为本机加一层保护（锁定用的是机主自己已录入的指纹/人脸），
       // 无需先验证身份。此前先 authenticate 再写开关，在部分机型上认证
       // 成功仍返回 false，导致开关开了又跳回关闭。
-      await bio.setEnabled(true);
+      //
+      // 关键修复：先乐观更新 UI（setState 立即置 true），让 Switch 在异步
+      // setEnabled 期间保持开启，避免 Flutter 检测到状态未及时变化而自动
+      // 回弹；保存失败时回滚 UI 并提示。
       if (mounted) setState(() => _bioEnabled = true);
+      try {
+        await bio.setEnabled(true);
+      } catch (_) {
+        if (mounted) {
+          setState(() => _bioEnabled = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(s.bioEnableSaveFailed)),
+          );
+        }
+      }
     } else {
       // 关闭 = 移除保护，需验证身份，防止他人趁手机未锁时关掉。
       setState(() => _bioLoading = true);

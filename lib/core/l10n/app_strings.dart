@@ -69,6 +69,7 @@ class AppStrings {
   final String bioEnableReason;
   final String bioDisableReason;
   final String bioFailed;
+  final String bioEnableSaveFailed;
   final String exportMnReason;
   final String authFailedNoExport;
   final String noWalletData;
@@ -236,6 +237,7 @@ class AppStrings {
     this.bioEnableReason = '开启生物识别以解锁钱包',
     this.bioDisableReason = '验证身份以关闭生物识别保护',
     this.bioFailed = '生物识别验证失败',
+    this.bioEnableSaveFailed = '生物识别开启失败，请重试',
     this.exportMnReason = '验证身份以导出助记词',
     this.authFailedNoExport = '身份验证失败，无法导出助记词',
     this.noWalletData = '未找到钱包数据',
@@ -424,6 +426,7 @@ class AppStrings {
     bioEnableReason: 'Enable biometrics to unlock your wallet',
     bioDisableReason: 'Verify to disable biometric protection',
     bioFailed: 'Biometric authentication failed',
+    bioEnableSaveFailed: 'Failed to enable biometrics, please retry',
     exportMnReason: 'Verify your identity to export the recovery phrase',
     authFailedNoExport: 'Authentication failed. Recovery phrase not exported',
     noWalletData: 'No wallet data found',
