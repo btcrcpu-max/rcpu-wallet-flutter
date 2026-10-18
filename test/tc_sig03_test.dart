@@ -36,7 +36,7 @@ class _FakeBiometric implements BiometricAuth {
   Future<bool> isEnabled() async => false;
 
   @override
-  Future<void> setEnabled(bool value) async {}
+  Future<bool> setEnabled(bool value) async => true;
 }
 
 class _FakeSignature implements SignatureService {

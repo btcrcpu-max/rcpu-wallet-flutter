@@ -46,7 +46,7 @@ class _FakeBiometric implements BiometricAuth {
   Future<bool> isEnabled() async => false;
 
   @override
-  Future<void> setEnabled(bool value) async {}
+  Future<bool> setEnabled(bool value) async => true;
 }
 
 /// 罐装 RPC：UTXO 按地址返回；原始交易 hex 固定。

@@ -24,6 +24,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _bioEnabled = false;
   bool _bioLoading = false;
 
+  /// 用户是否已手动操作过开关。
+  ///
+  /// initState 里的 [_loadBioState] 是异步的（读 SharedPreferences），
+  /// 如果它在用户点击开关之后才返回，会拿旧值（false）把用户刚打开的
+  /// 开关覆盖回关闭。置位后忽略远端加载结果，避免此竞态。
+  bool _bioUserTouched = false;
+
   @override
   void initState() {
     super.initState();
@@ -33,7 +40,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _loadBioState() async {
     final bio = ref.read(biometricAuthProvider);
     final enabled = await bio.isEnabled();
-    if (mounted) {
+    if (mounted && !_bioUserTouched) {
       setState(() {
         _bioEnabled = enabled;
       });
@@ -41,6 +48,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _toggleBio(bool value) async {
+    // 用户已操作：此后任何异步读取结果都不得覆盖当前 UI 状态。
+    _bioUserTouched = true;
     final bio = ref.read(biometricAuthProvider);
     final s = ref.read(appStringsProvider);
     if (value) {
@@ -53,7 +62,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       // 回弹；保存失败时回滚 UI 并提示。
       if (mounted) setState(() => _bioEnabled = true);
       try {
-        await bio.setEnabled(true);
+        final saved = await bio.setEnabled(true);
+        if (!saved) throw StateError('setEnabled returned false');
       } catch (_) {
         if (mounted) {
           setState(() => _bioEnabled = false);

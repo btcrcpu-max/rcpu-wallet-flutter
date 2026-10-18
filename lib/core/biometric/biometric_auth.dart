@@ -31,10 +31,13 @@ class BiometricAuth {
     return prefs.getBool(_kEnabled) ?? false;
   }
 
-  /// 设置生物识别开关（需先通过 authenticate 验证身份）。
-  Future<void> setEnabled(bool value) async {
+/// 设置生物识别开关（需先通过 authenticate 验证身份）。
+  ///
+  /// 返回写入是否成功（SharedPreferences.setBool 在写失败时返回 false
+  /// 而非抛异常，调用方需据此回滚 UI 状态）。
+  Future<bool> setEnabled(bool value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kEnabled, value);
+    return prefs.setBool(_kEnabled, value);
   }
 
   /// 弹出系统生物识别确认。
