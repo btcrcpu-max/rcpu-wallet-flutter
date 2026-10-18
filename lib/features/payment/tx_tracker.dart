@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/di.dart';
 import '../../core/network/native_rpc.dart';
+import '../../core/utils/amount.dart';
 
 /// 待确认交易（首页/收款页展示；达到 6 确认后自动消失）。
 class PendingTx {
@@ -50,8 +51,8 @@ final txTrackerProvider =
 /// 追踪收/付款确认数。
 ///
 /// - 转出：本机广播成功时经 [recordOutgoing] 登记并持久化（重启不丢）；
-/// - 转入：刷新时按地址拉取历史（[NativeRpcClient.getHistory]），
-///   筛出未达 6 确认的入账；
+/// - 转入：扫描最近 5 个区块（`getblock` verbosity=2）与 mempool 中发往
+///   本机地址脚本的输出（裸节点无 `get_history`，以区块扫描替代）；
 /// - 确认数经 [NativeRpcClient.getConfirmations] 查询（未打包按 0 计），
 ///   达到 6 确认的记录移出列表（UI 消失）。
 class TxTrackerNotifier extends StateNotifier<List<PendingTx>> {
@@ -121,28 +122,58 @@ class TxTrackerNotifier extends StateNotifier<List<PendingTx>> {
     _outgoing = kept;
     await _save();
 
-    // 转入：历史中的未达 6 确认入账（历史查询失败不阻塞转出列表）。
+    // 转入：扫描最近 5 个区块 + mempool 中发往本机地址脚本的输出
+    // （rcpu.cloud 为裸节点，无 get_history；1–5 确认来自区块，0 确认来自
+    // mempool）。扫描失败不阻塞转出列表展示。
     var incoming = <PendingTx>[];
     if (address != null && address.isNotEmpty) {
       try {
-        final history = await _rpc.getHistory(address, limit: 20);
-        for (final r in history.where((r) => r.isIncoming)) {
-          final c = await _rpc.getConfirmations(r.txHash) ??
-              (r.isPending ? 0 : requiredConfirmations);
-          if (c < requiredConfirmations) {
-            incoming.add(PendingTx(
-              txid: r.txHash,
-              direction: 'in',
-              amount: r.amount,
-              confirmations: c,
-            ));
+        final scriptHex = _rpc.scriptHexForAddress(address);
+        if (scriptHex != null) {
+          final tip = await _rpc.getBlockHeight();
+          // txid -> (确认数, 合计金额 micro)；同交易多输出合并。
+          final matched = <String, _IncomingMatch>{};
+          void collect(Iterable<ScannedVout> vouts, int confs) {
+            for (final v in vouts) {
+              if (v.scriptHex != scriptHex) continue;
+              final m = matched[v.txid];
+              if (m == null) {
+                matched[v.txid] = _IncomingMatch(confs, v.amountMicro);
+              } else {
+                m.amountMicro += v.amountMicro;
+              }
+            }
           }
+
+          // 1–5 确认：最近 5 个区块（6 确认及以上本就不展示）。
+          for (var h = tip; h > tip - (requiredConfirmations - 1) && h > 0; h--) {
+            collect(await _rpc.getBlockVouts(h), tip - h + 1);
+          }
+          // 0 确认：mempool。
+          collect(await _rpc.getMempoolVouts(), 0);
+
+          incoming = [
+            for (final e in matched.entries)
+              PendingTx(
+                txid: e.key,
+                direction: 'in',
+                amount: Amount.fromMicro(e.value.amountMicro),
+                confirmations: e.value.confs,
+              ),
+          ];
         }
       } catch (_) {
-        // 历史查询失败不阻塞转出列表展示。
+        // 历史扫描失败不阻塞转出列表展示。
       }
     }
 
     state = [..._outgoing.reversed, ...incoming];
   }
+}
+
+/// 区块/mempool 扫描匹配到的入账（同交易多输出累加金额）。
+class _IncomingMatch {
+  final int confs;
+  int amountMicro;
+  _IncomingMatch(this.confs, this.amountMicro);
 }

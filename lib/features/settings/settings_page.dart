@@ -32,23 +32,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Future<void> _loadBioState() async {
     final bio = ref.read(biometricAuthProvider);
-    final available = await bio.isAvailable();
-    final hasEnrolled = await bio.hasEnrolledBiometrics();
     final enabled = await bio.isEnabled();
     if (mounted) {
       setState(() {
         _bioEnabled = enabled;
       });
-      final s = ref.read(appStringsProvider);
-      if (!available) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(s.bioUnsupported)),
-        );
-      } else if (!hasEnrolled) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(s.bioNotEnrolled)),
-        );
-      }
     }
   }
 
@@ -56,26 +44,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final bio = ref.read(biometricAuthProvider);
     final s = ref.read(appStringsProvider);
     if (value) {
-      // 先检测设备支持情况
-      final available = await bio.isAvailable();
-      if (!available) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(s.bioUnsupported)),
-          );
-        }
-        return;
-      }
-      final hasEnrolled = await bio.hasEnrolledBiometrics();
-      if (!hasEnrolled) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(s.bioNotEnrolled)),
-          );
-        }
-        return;
-      }
-
+      // 直接发起系统验证：canCheckBiometrics / getAvailableBiometrics 在
+      // 部分机型上误报（付款指纹可用的机器上返回不支持/未录入），导致
+      // 开关永远无法开启。authenticate 与付款同一通路，设备不支持时会
+      // 快速失败并提示。
       setState(() => _bioLoading = true);
       final ok = await bio.authenticate(reason: s.bioEnableReason);
       setState(() => _bioLoading = false);

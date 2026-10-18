@@ -20,6 +20,24 @@ class RpcException implements Exception {
   String toString() => 'RpcException($code): $message';
 }
 
+/// 区块/mempool 扫描得到的交易输出（供待确认入账检测）。
+class ScannedVout {
+  /// 交易哈希（显示字节序）。
+  final String txid;
+
+  /// 输出 scriptPubKey hex。
+  final String scriptHex;
+
+  /// 输出金额（micro）；CT 盲化输出为 0。
+  final int amountMicro;
+
+  const ScannedVout({
+    required this.txid,
+    required this.scriptHex,
+    required this.amountMicro,
+  });
+}
+
 /// 原生链 RPC 客户端。
 ///
 /// 连接公开节点 RPC 7337 或轻量代理；CT 输出解析由代理完成
@@ -329,6 +347,68 @@ class NativeRpcClient {
       }
       rethrow;
     }
+  }
+
+  /// 地址对应的 P2WPKH scriptPubKey hex（`0014<hash160/keyid>`）。
+  ///
+  /// 明文 `rcpu1` 与隐私 `rcpux1` 地址的链上输出同为 P2WPKH 脚本，
+  /// 均可用于按脚本匹配区块/mempool 中的入账；解码失败返回 null。
+  String? scriptHexForAddress(String address) {
+    final desc = _rawDescriptorFor(address); // 形如 raw(0014<hex>)
+    if (desc == null) return null;
+    return desc.substring(4, desc.length - 1);
+  }
+
+  /// 指定高度区块内全部交易的输出（`getblockhash` + `getblock` verbosity=2）。
+  ///
+  /// 裸节点无 `get_history`，用最近区块扫描替代地址历史查询。
+  Future<List<ScannedVout>> getBlockVouts(int height) async {
+    final hb = await _rpc('getblockhash', [height], id: 41);
+    final hash = hb['result'] as String? ?? '';
+    if (hash.isEmpty) return const [];
+    final bb = await _rpc('getblock', [hash, 2], id: 42);
+    final result = bb['result'];
+    final txs = result is Map ? (result['tx'] as List?) ?? [] : [];
+    return [
+      for (final t in txs)
+        if (t is Map<String, dynamic>) ..._voutsOfVerboseTx(t),
+    ];
+  }
+
+  /// mempool 中全部交易的输出（0 确认；[cap] 限制扫描条数防爆量）。
+  Future<List<ScannedVout>> getMempoolVouts({int cap = 200}) async {
+    final mb = await _rpc('getrawmempool', const [], id: 43);
+    final ids = (mb['result'] as List?) ?? [];
+    final out = <ScannedVout>[];
+    for (final id in ids.take(cap)) {
+      try {
+        final tb = await _rpc('getrawtransaction', ['$id', true], id: 44);
+        final result = tb['result'];
+        if (result is Map<String, dynamic>) {
+          out.addAll(_voutsOfVerboseTx(result));
+        }
+      } catch (_) {
+        // 单条交易拉取失败跳过，不影响其余扫描。
+      }
+    }
+    return out;
+  }
+
+  /// 从 verbose 交易 JSON 拆出输出列表（txid 为显示字节序）。
+  List<ScannedVout> _voutsOfVerboseTx(Map<String, dynamic> tx) {
+    final txid = (tx['txid'] ?? '').toString();
+    final vouts = tx['vout'] as List? ?? [];
+    return [
+      for (final v in vouts)
+        if (v is Map)
+          ScannedVout(
+            txid: txid,
+            scriptHex:
+                ((v['scriptPubKey'] as Map?)?['hex'] ?? '').toString(),
+            // CT 盲化输出无 value 字段，金额记 0（由上层按需决定是否展示）。
+            amountMicro: _microFromAmount((v['value'] as num?) ?? 0),
+          ),
+    ];
   }
 
   /// 解析 CT 输出为明文金额（docs/proxy-rpc-schema.md §6.1 对象形态契约）。

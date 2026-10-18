@@ -9,7 +9,8 @@ class SettingsService {
 
   SettingsService(this._store, this._biometric);
 
-  Future<bool> biometricEnabled() => _biometric.hasEnrolledBiometrics();
+  /// 生物识别开关状态（应用内设置项，非设备录入状态）。
+  Future<bool> biometricEnabled() => _biometric.isEnabled();
 
   /// 导出助记词（需二次生物识别确认）。
   Future<String?> exportMnemonic() async {
