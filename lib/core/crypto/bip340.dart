@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:pointycastle/digests/sha256.dart';
 import 'package:pointycastle/ecc/api.dart';
 import 'package:pointycastle/ecc/curves/secp256k1.dart';
+import '../l10n/app_strings.dart';
 
 /// BIP340 Schnorr 签名（基于 pointycastle 的 secp256k1 曲线自实现）。
 ///
@@ -52,7 +53,7 @@ class Bip340 {
 
 /// 压缩公钥（33B `02/03||X`）取 x-only（32B）。
   static Uint8List xOnlyFromPub(Uint8List pub33) {
-    assert(pub33.length == 33, '压缩公钥必须为 33 字节');
+    assert(pub33.length == 33, tr('压缩公钥必须为 33 字节', 'compressed public key must be 33 bytes'));
     return Uint8List.fromList(pub33.sublist(1));
   }
 
@@ -61,15 +62,15 @@ class Bip340 {
   /// 供交易模板构建与 prevout 校验使用（P2TR 脚本 = `0x51 0x20 || xonly`）。
   static Uint8List pubKeyFromPriv(Uint8List privKey32) {
     if (privKey32.length != 32) {
-      throw ArgumentError('私钥必须为 32 字节');
+      throw ArgumentError(tr('私钥必须为 32 字节', 'private key must be 32 bytes'));
     }
     var d = _bytesToBigInt(privKey32);
     if (d <= BigInt.zero || d >= curveOrder) {
-      throw ArgumentError('私钥超出合法范围');
+      throw ArgumentError(tr('私钥超出合法范围', 'private key out of range'));
     }
     final p = _params.G * d;
     if (p == null || p.isInfinity) {
-      throw StateError('私钥点乘失败');
+      throw StateError(tr('私钥点乘失败', 'private key scalar multiplication failed'));
     }
     return p.getEncoded(true);
   }

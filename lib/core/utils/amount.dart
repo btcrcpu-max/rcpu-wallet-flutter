@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 /// 金额换算工具。
 ///
 /// 统一以 1e8 为内部整数单位（micro-RCPU），与 wRCPU Decimals = 8 对齐。
@@ -18,7 +19,7 @@ class Amount {
   /// 字符串金额 -> micro 整数。
   static int toMicro(String input) {
     if (!isValid(input)) {
-      throw FormatException('非法金额: $input');
+      throw FormatException(tr('非法金额: $input', 'invalid amount: $input'));
     }
     final parts = input.split('.');
     final whole = int.parse(parts[0]);

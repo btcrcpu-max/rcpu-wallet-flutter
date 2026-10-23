@@ -611,3 +611,6 @@ final appStringsProvider = Provider<AppStrings>((ref) {
   return s;
 });
 
+/// Translate a one-off message that lives outside the widget tree
+/// (crypto / network / service layers).
+String tr(String zh, String en) => AppStrings.current.isEn ? en : zh;

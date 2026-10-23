@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 /// 地址领域模型。
 ///
 /// 覆盖三种地址形态：
@@ -36,7 +37,7 @@ class Address {
     if (lower.startsWith(plainPrefix)) {
       return Address(lower, 'plain');
     }
-    throw FormatException('无法识别的地址前缀: $v');
+    throw FormatException(tr('无法识别的地址前缀: $v', 'unrecognised address prefix: $v'));
   }
 
   bool get isNative => type == 'plain' || type == 'private';

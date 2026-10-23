@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import '../l10n/app_strings.dart';
 
 /// 原生链未花费输出（UTXO）模型。
 ///
@@ -63,7 +64,7 @@ class NativeUtxo {
   static Uint8List _hexToBytes(String hex) {
     final h = hex.trim().startsWith('0x') ? hex.trim().substring(2) : hex.trim();
     if (h.isEmpty) return Uint8List(0);
-    if (h.length.isOdd) throw const FormatException('hex 长度必须为偶数');
+    if (h.length.isOdd) throw FormatException(tr('hex 长度必须为偶数', 'hex length must be even'));
     return Uint8List.fromList(List.generate(
         h.length ~/ 2, (i) => int.parse(h.substring(i * 2, i * 2 + 2), radix: 16)));
   }

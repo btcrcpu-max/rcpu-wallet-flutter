@@ -8,6 +8,7 @@ import '../../core/models/address.dart';
 import '../../core/network/bsc_rpc.dart';
 import '../../core/network/http_client.dart';
 import '../../core/utils/amount.dart';
+import '../../core/l10n/app_strings.dart';
 
 /// 桥常量（已确认事实，勿改）。
 class BridgeConfig {
@@ -94,13 +95,13 @@ class BridgeNotifier extends StateNotifier<BridgeState> {
     try {
       addr = Address.parse(fromPlainAddress);
     } on FormatException {
-      return const BridgeResult.fail('铸造仅支持明文 rcpu1 地址，已拒绝 rcpux1');
+      return BridgeResult.fail(tr('铸造仅支持明文 rcpu1 地址，已拒绝 rcpux1', 'minting only supports plain rcpu1 addresses; rcpux1 refused'));
     }
     if (!addr.isPlain) {
-      return const BridgeResult.fail('铸造仅支持明文 rcpu1 地址，已拒绝 rcpux1');
+      return BridgeResult.fail(tr('铸造仅支持明文 rcpu1 地址，已拒绝 rcpux1', 'minting only supports plain rcpu1 addresses; rcpux1 refused'));
     }
     if (amountMicro < Amount.minDepositMicro) {
-      return const BridgeResult.fail('最低存款 0.01 RCPU');
+      return BridgeResult.fail(tr('最低存款 0.01 RCPU', 'minimum deposit is 0.01 RCPU'));
     }
     state = BridgeState(
       phase: 'deposit',
@@ -115,9 +116,9 @@ class BridgeNotifier extends StateNotifier<BridgeState> {
         'amount': Amount.fromMicro(amountMicro),
         'txHash': nativeTxHash ?? '',
       });
-      return BridgeResult.ok('存款已记录，等待累计满 10 RCPU', state: state);
+      return BridgeResult.ok(tr('存款已记录，等待累计满 10 RCPU', 'deposit recorded, waiting until 10 RCPU accumulates'), state: state);
     } catch (_) {
-      return const BridgeResult.fail('桥 API 暂不可用，请稍后重试');
+      return BridgeResult.fail(tr('桥 API 暂不可用，请稍后重试', 'bridge API temporarily unavailable, please retry'));
     }
   }
 
@@ -179,13 +180,13 @@ class BridgeNotifier extends StateNotifier<BridgeState> {
     try {
       addr = Address.parse(rcpuReceiveAddress);
     } on FormatException {
-      return const BridgeResult.fail('赎回收款地址必须是明文 rcpu1 地址');
+      return BridgeResult.fail(tr('赎回收款地址必须是明文 rcpu1 地址', 'redemption address must be a plain rcpu1 address'));
     }
     if (!addr.isPlain) {
-      return const BridgeResult.fail('赎回收款地址必须是明文 rcpu1 地址');
+      return BridgeResult.fail(tr('赎回收款地址必须是明文 rcpu1 地址', 'redemption address must be a plain rcpu1 address'));
     }
     if (amountMicro < Amount.minDepositMicro) {
-      return const BridgeResult.fail('赎回金额过小');
+      return BridgeResult.fail(tr('赎回金额过小', 'redemption amount too small'));
     }
     state = const BridgeState(
       phase: 'redeem',
@@ -195,7 +196,7 @@ class BridgeNotifier extends StateNotifier<BridgeState> {
     try {
       final bnbWei = await _bsc.getBnbBalance(bscAddress);
       if (bnbWei < BigInt.from(10000000000000000)) { // 0.01 BNB 预估
-        return const BridgeResult.fail('BSC Gas（BNB）不足，请先补充 BNB');
+        return BridgeResult.fail(tr('BSC Gas（BNB）不足，请先补充 BNB', 'insufficient BSC gas (BNB); top up BNB first'));
       }
       final txHash = await _bsc.redeem(
         fromPrivateKey: bscPrivateKey,
@@ -208,14 +209,14 @@ class BridgeNotifier extends StateNotifier<BridgeState> {
         wrcpuTxHash: txHash,
         estimatedTimeMinutes: 15,
       );
-      return BridgeResult.ok('赎回已广播，RCPU 将直接到账原生余额', state: state);
+      return BridgeResult.ok(tr('赎回已广播，RCPU 将直接到账原生余额', 'redemption broadcast; RCPU will arrive in your native balance'), state: state);
     } catch (e) {
       state = const BridgeState(
         phase: 'redeem',
         state: 'failed',
         errorCode: 'REDEEM_FAILED',
       );
-      return BridgeResult.fail('赎回失败: $e');
+      return BridgeResult.fail(tr('赎回失败: $e', 'redemption failed: $e'));
     }
   }
 

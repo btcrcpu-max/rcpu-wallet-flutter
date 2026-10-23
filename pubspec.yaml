@@ -1,7 +1,7 @@
 name: rcpu_wallet
 description: RCPU 手机钱包 - 原生 RCPU（明文+CT）与 BSC wRCPU 双链钱包
 publish_to: 'none'
-version: 0.4.9+15
+version: 0.4.10+16
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

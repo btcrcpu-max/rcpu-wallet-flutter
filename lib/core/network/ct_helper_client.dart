@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import '../l10n/app_strings.dart';
 
 /// CT 盲化协处理器（服务器侧 secp256k1-zkp）HTTP 客户端。
 ///
@@ -202,13 +203,13 @@ class CtHelperClient {
       }
       final status = e.response?.statusCode;
       throw CtHelperException(
-        status != null ? 'CT 服务 HTTP $status: ${e.message}' : 'CT 服务不可达: ${e.message ?? e.type}',
+        status != null ? tr('CT 服务 HTTP $status: ${e.message}', 'CT service HTTP $status: ${e.message}') : tr('CT 服务不可达: ${e.message ?? e.type}', 'CT service unreachable: ${e.message ?? e.type}'),
         transient: true,
       );
     }
     final data = resp.data;
     if (data is! Map) {
-      throw const CtHelperException('CT 服务返回非 JSON 响应');
+      throw CtHelperException(tr('CT 服务返回非 JSON 响应', 'CT service returned a non-JSON response'));
     }
     if (data['error'] != null) {
       throw CtHelperException(data['error'].toString());
@@ -221,8 +222,8 @@ class CtHelperClient {
     required List<CtBuildInput> inputs,
     required List<CtBuildOutput> outputs,
   }) async {
-    if (inputs.isEmpty) throw const CtHelperException('至少需要一个输入');
-    if (outputs.isEmpty) throw const CtHelperException('至少需要一个输出');
+    if (inputs.isEmpty) throw CtHelperException(tr('至少需要一个输入', 'at least one input is required'));
+    if (outputs.isEmpty) throw CtHelperException(tr('至少需要一个输出', 'at least one output is required'));
     final json = await _post('build', {
       'inputs': [for (final i in inputs) i.toJson()],
       'outputs': [for (final o in outputs) o.toJson()],
@@ -230,7 +231,7 @@ class CtHelperClient {
     final txHex = json['tx_no_witness_hex'] as String?;
     final digests = (json['digests'] as List?)?.cast<String>() ?? const [];
     if (txHex == null || digests.length != inputs.length) {
-      throw const CtHelperException('build 返回字段不完整');
+      throw CtHelperException(tr('build 返回字段不完整', 'build returned incomplete fields'));
     }
     final metas = <CtOutputMeta>[];
     for (final m in (json['outputs_meta'] as List?) ?? const []) {
@@ -257,9 +258,9 @@ class CtHelperClient {
     required Uint8List commitment33,
     required Uint8List rangeproof,
   }) async {
-    if (nonce32.length != 32) throw const CtHelperException('nonce 须为 32B');
+    if (nonce32.length != 32) throw CtHelperException(tr('nonce 须为 32B', 'nonce must be 32 bytes'));
     if (commitment33.length != 33) {
-      throw const CtHelperException('commitment 须为 33B');
+      throw CtHelperException(tr('commitment 须为 33B', 'commitment must be 33 bytes'));
     }
     final json = await _post('rewind', {
       'nonce_hex': _hex(nonce32),
@@ -269,7 +270,7 @@ class CtHelperClient {
     final amt = (json['amount_micro'] as num?)?.toInt();
     final blind = json['blind_hex'] as String?;
     if (amt == null || blind == null) {
-      throw const CtHelperException('rewind 返回字段不完整');
+      throw CtHelperException(tr('rewind 返回字段不完整', 'rewind returned incomplete fields'));
     }
     return CtRewindResult(amountMicro: amt, blindHex: blind);
   }
@@ -285,7 +286,7 @@ class CtHelperClient {
     final x = json['nonce_x_hex'] as String?;
     final spk = json['script_pubkey_hex'] as String?;
     if (commit == null || rp == null || x == null || spk == null) {
-      throw const CtHelperException('xctout 返回字段不完整');
+      throw CtHelperException(tr('xctout 返回字段不完整', 'xctout returned incomplete fields'));
     }
     return CtOutputFields(
       commitmentHex: commit,

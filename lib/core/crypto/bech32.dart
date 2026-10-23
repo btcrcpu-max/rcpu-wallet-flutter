@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import '../l10n/app_strings.dart';
 
 /// bech32 / bech32m 编解码（BIP173 / BIP350）。
 ///
@@ -39,7 +40,7 @@ class Bech32 {
     final lower = input.toLowerCase();
     final sep = lower.lastIndexOf('1');
     if (sep < 1 || sep + 7 > lower.length) {
-      throw const FormatException('bech32 格式非法: 缺少或错误的 1 分隔符');
+      throw FormatException(tr('bech32 格式非法: 缺少或错误的 1 分隔符', 'invalid bech32: missing or misplaced '1' separator'));
     }
     final hrp = lower.substring(0, sep);
     final dataPart = lower.substring(sep + 1);
@@ -47,14 +48,14 @@ class Bech32 {
     for (var i = 0; i < dataPart.length; i++) {
       final idx = charset.indexOf(dataPart[i]);
       if (idx < 0) {
-        throw FormatException('bech32 字符集外字符: ${dataPart[i]}');
+        throw FormatException(tr('bech32 字符集外字符: ${dataPart[i]}', 'invalid bech32 character: ${dataPart[i]}'));
       }
       data[i] = idx;
     }
     final polymod = _polyMod([..._expandHrp(hrp), ...data]);
     final expectedConst = isBech32m ? bech32mConst : bech32Const;
     if (polymod != expectedConst) {
-      throw const FormatException('bech32 checksum 校验失败');
+      throw FormatException(tr('bech32 checksum 校验失败', 'bech32 checksum failed'));
     }
     // 去掉 6 字节 checksum
     return Bech32Decoded(
@@ -77,7 +78,7 @@ class Bech32 {
   /// 「Invalid padding / 非法 program 长度」并拒绝地址。
   static String encodeWitness(String hrp, int version, Uint8List program) {
     if (version < 0 || version > 16) {
-      throw const FormatException('witness version 须在 0..16');
+      throw FormatException(tr('witness version 须在 0..16', 'witness version must be within 0..16'));
     }
     final useM = version != 0;
     final data = <int>[version, ...convertBits(program, 8, 5, pad: true)];
@@ -99,7 +100,7 @@ class Bech32 {
     final lower = input.toLowerCase();
     final sep = lower.lastIndexOf('1');
     if (sep < 1 || sep + 7 > lower.length) {
-      throw const FormatException('bech32 格式非法: 缺少或错误的 1 分隔符');
+      throw FormatException(tr('bech32 格式非法: 缺少或错误的 1 分隔符', 'invalid bech32: missing or misplaced '1' separator'));
     }
     final hrp = lower.substring(0, sep);
     final dataPart = lower.substring(sep + 1);
@@ -107,24 +108,24 @@ class Bech32 {
     for (var i = 0; i < dataPart.length; i++) {
       final idx = charset.indexOf(dataPart[i]);
       if (idx < 0) {
-        throw FormatException('bech32 字符集外字符: ${dataPart[i]}');
+        throw FormatException(tr('bech32 字符集外字符: ${dataPart[i]}', 'invalid bech32 character: ${dataPart[i]}'));
       }
       data.add(idx);
     }
     final polymod = _polyMod([..._expandHrp(hrp), ...data]);
     if (polymod != bech32Const && polymod != bech32mConst) {
-      throw const FormatException('bech32 checksum 校验失败');
+      throw FormatException(tr('bech32 checksum 校验失败', 'bech32 checksum failed'));
     }
     if (data.isEmpty) {
-      throw const FormatException('bech32 数据段为空');
+      throw FormatException(tr('bech32 数据段为空', 'bech32 data part is empty'));
     }
     final version = data[0];
     if (version < 0 || version > 16) {
-      throw FormatException('witness version 非法: $version');
+      throw FormatException(tr('witness version 非法: $version', 'invalid witness version: $version'));
     }
     final isM = polymod == bech32mConst;
     if ((version == 0) == isM) {
-      throw const FormatException('witness version 与 checksum 类型不匹配');
+      throw FormatException(tr('witness version 与 checksum 类型不匹配', 'witness version does not match checksum type'));
     }
     final program = convertBits(
       Uint8List.fromList(data.sublist(1, data.length - 6)),
@@ -158,7 +159,7 @@ class Bech32 {
         acc.add((value << (to - bits)) & maxv);
       }
     } else if (bits >= from || ((value << (to - bits)) & maxv) != 0) {
-      throw const FormatException('ConvertBits 尾段不完整，拒绝解码');
+      throw FormatException(tr('ConvertBits 尾段不完整，拒绝解码', 'ConvertBits produced an incomplete tail, refusing to decode'));
     }
     return Uint8List.fromList(acc);
   }

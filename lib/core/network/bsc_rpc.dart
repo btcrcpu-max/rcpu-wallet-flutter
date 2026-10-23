@@ -3,6 +3,7 @@ import 'package:web3dart/web3dart.dart';
 
 import '../models/balance.dart';
 import '../models/tx_record.dart';
+import '../l10n/app_strings.dart';
 
 /// BSC RPC 客户端（web3dart）。
 ///
@@ -46,7 +47,7 @@ class BscRpcClient {
 
   /// 估算 Gas（web3dart 专用实现预留）。
   Future<BigInt> estimateGas() async {
-    throw UnimplementedError('按具体合约调用封装');
+    throw UnimplementedError(tr('按具体合约调用封装', 'wraps a call to a specific contract'));
   }
 
   /// 转账 wRCPU（标准 BEP-20 transfer）。

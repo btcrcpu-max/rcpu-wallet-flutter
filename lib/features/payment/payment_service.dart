@@ -183,7 +183,7 @@ class PaymentService {
   }) async {
     final helper = ctHelper;
     if (helper == null) {
-      throw UnimplementedError('CT 代理未配置');
+      throw UnimplementedError(tr('CT 代理未配置', 'CT helper not configured'));
     }
     if (amountMicro <= 0) throw FormatException(AppStrings.current.amountMustBePositive);
     if (ctKeyHex == null || ctKeyHex.isEmpty) {
@@ -590,7 +590,7 @@ class PaymentService {
     }
     final to = Address.parse(toAddress);
     if (to.isPrivate) {
-      throw UnimplementedError('隐私收款需 CT 盲化回填');
+      throw UnimplementedError(tr('隐私收款需 CT 盲化回填', 'confidential receiving requires CT blinding backfill'));
     }
     if (!to.isPlain) {
       throw FormatException(AppStrings.current.onlyPlainRecv);

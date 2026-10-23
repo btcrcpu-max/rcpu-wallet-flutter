@@ -5,6 +5,7 @@ import 'package:pointycastle/export.dart';
 
 import '../network/ct_helper_client.dart';
 import '../network/native_rpc.dart';
+import '../l10n/app_strings.dart';
 
 /// Path C 密钥派生原语（官方 `doc/ct-path-c.md` Appendix A/C 向量锚定于
 /// `test/tc_sig02_hkdf_test.dart`）。
@@ -41,17 +42,17 @@ Uint8List derivePathCNonce(Uint8List ss, Uint8List scriptPubKey) {
 ///
 /// [priv32] 为本方 32B 私钥；[compressedPub33] 为对方压缩公钥（`02/03||X`）。
 Uint8List ecdhSharedX(Uint8List priv32, Uint8List compressedPub33) {
-  if (priv32.length != 32) throw const FormatException('私钥须为 32B');
+  if (priv32.length != 32) throw FormatException(tr('私钥须为 32B', 'private key must be 32 bytes'));
   if (compressedPub33.length != 33 || (compressedPub33[0] != 2 && compressedPub33[0] != 3)) {
-    throw const FormatException('公钥须为 33B 压缩点');
+    throw FormatException(tr('公钥须为 33B 压缩点', 'public key must be a 33-byte compressed point'));
   }
   final domain = ECCurve_secp256k1();
   final d = _bytesToBigInt(priv32);
   final q = domain.curve.decodePoint(compressedPub33);
-  if (q == null) throw const FormatException('公钥不是有效曲线点');
+  if (q == null) throw FormatException(tr('公钥不是有效曲线点', 'public key is not a valid curve point'));
   final shared = q * d;
   if (shared == null || shared.isInfinity) {
-    throw const FormatException('ECDH 结果无效');
+    throw FormatException(tr('ECDH 结果无效', 'ECDH result is invalid'));
   }
   return _bigIntTo32(shared.x!.toBigInteger()!);
 }
@@ -114,7 +115,7 @@ BigInt _bytesToBigInt(Uint8List bytes) {
 Uint8List _hexToBytes(String hex) {
   final h = hex.trim().startsWith('0x') ? hex.trim().substring(2) : hex.trim();
   if (h.isEmpty) return Uint8List(0);
-  if (h.length.isOdd) throw const FormatException('hex 长度必须为偶数');
+  if (h.length.isOdd) throw FormatException(tr('hex 长度必须为偶数', 'hex length must be even'));
   return Uint8List.fromList(List.generate(
       h.length ~/ 2, (i) => int.parse(h.substring(i * 2, i * 2 + 2), radix: 16)));
 }
@@ -192,7 +193,7 @@ class CtResolver {
   }) async {
     final ct = _ct;
     if (ct == null) {
-      throw const CtHelperException('未配置 CT 代理，无法解盲隐藏金额输出');
+      throw CtHelperException(tr('未配置 CT 代理，无法解盲隐藏金额输出', 'CT helper not configured; cannot unblind hidden-amount outputs'));
     }
     final txHex = await _rpc.getRawTransactionHex(txidDisplayHex);
     final fields = await ct.xctout(txHex: txHex, vout: vout);

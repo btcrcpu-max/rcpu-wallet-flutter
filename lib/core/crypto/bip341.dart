@@ -4,6 +4,7 @@ import 'package:pointycastle/digests/sha256.dart';
 
 import 'bip340.dart';
 import 'native_tx.dart';
+import '../l10n/app_strings.dart';
 
 /// BIP341（Taproot）签名哈希计算，key-path 花费（SIGHASH_DEFAULT）。
 ///
@@ -43,10 +44,10 @@ class Bip341 {
     required int inputIndex,
   }) {
     if (inputIndex < 0 || inputIndex >= tx.inputs.length) {
-      throw RangeError('inputIndex 越界');
+      throw RangeError(tr('inputIndex 越界', 'inputIndex out of range'));
     }
     if (prevOuts.length != tx.inputs.length) {
-      throw ArgumentError('prevOuts 长度须与输入个数一致');
+      throw ArgumentError(tr('prevOuts 长度须与输入个数一致', 'prevOuts length must match the number of inputs'));
     }
 
     final b = BytesBuilder();
@@ -116,7 +117,7 @@ class Bip341 {
   /// 标准 P2TR 锁定脚本：`0x51 0x20 || xonly32`。
   static Uint8List p2trScriptPubKey(Uint8List xOnly32) {
     if (xOnly32.length != 32) {
-      throw ArgumentError('x-only 公钥必须为 32 字节');
+      throw ArgumentError(tr('x-only 公钥必须为 32 字节', 'x-only public key must be 32 bytes'));
     }
     return Uint8List.fromList([0x51, 0x20, ...xOnly32]);
   }

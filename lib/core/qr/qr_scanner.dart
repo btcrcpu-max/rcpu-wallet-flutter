@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 /// 扫码结果：解析后的付款目标。
 class ScannedPayment {
   final String address;
@@ -45,13 +46,13 @@ class QrScanner {
   static ScannedPayment parse(String raw) {
     final text = raw.trim();
     if (!text.toLowerCase().startsWith('rcpu:')) {
-      throw const FormatException('非 rcpu: 协议，已拒绝');
+      throw FormatException(tr('非 rcpu: 协议，已拒绝', 'not an rcpu: URI, refused'));
     }
     final body = text.substring(5);
     final queryIndex = body.indexOf('?');
     var address = queryIndex < 0 ? body : body.substring(0, queryIndex);
     if (address.isEmpty) {
-      throw const FormatException('缺少收款地址');
+      throw FormatException(tr('缺少收款地址', 'missing recipient address'));
     }
     // bech32 地址归一为小写（EVM 0x 地址保持原样）。
     if (!address.startsWith('0x')) {

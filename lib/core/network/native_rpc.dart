@@ -8,6 +8,7 @@ import '../models/balance.dart';
 import '../models/ct_resolve_result.dart';
 import '../models/native_utxo.dart';
 import '../models/tx_record.dart';
+import '../l10n/app_strings.dart';
 
 /// RPC 调用失败（错误码定义见 docs/proxy-rpc-schema.md §2）。
 class RpcException implements Exception {
@@ -130,13 +131,13 @@ class NativeRpcClient {
       final status = e.response?.statusCode;
       throw RpcException(
         -32000,
-        status != null ? '节点 HTTP $status: $detail' : '节点网络错误: $detail',
+        status != null ? tr('节点 HTTP $status: $detail', 'node HTTP $status: $detail') : tr('节点网络错误: $detail', 'node network error: $detail'),
       );
     }
     final data = resp.data;
     if (data is! Map<String, dynamic>) {
       // 代理/反代异常时可能返回 HTML 或纯文本（如 502 页面）。
-      throw RpcException(-32000, '节点返回非 JSON 响应（HTTP ${resp.statusCode}）');
+      throw RpcException(-32000, tr('节点返回非 JSON 响应（HTTP ${resp.statusCode}）', 'node returned a non-JSON response (HTTP ${resp.statusCode})'));
     }
     final body = data;
     final err = body['error'];
@@ -144,7 +145,7 @@ class NativeRpcClient {
       final e = err as Map<String, dynamic>;
       throw RpcException(
         e['code'] as int? ?? -32603,
-        e['message'] as String? ?? '$method 失败',
+        e['message'] as String? ?? tr('$method 失败', '$method failed'),
       );
     }
     return body;
@@ -298,7 +299,7 @@ class NativeRpcClient {
     if (result is Map && result['hex'] is String) {
       return result['hex'] as String;
     }
-    throw const RpcException(-32000, 'getrawtransaction 返回格式异常');
+    throw RpcException(-32000, tr('getrawtransaction 返回格式异常', 'getrawtransaction returned a malformed response'));
   }
 
   /// 查询交易确认数（`getrawtransaction <txid> true` 的 confirmations 字段）。
@@ -478,7 +479,7 @@ class NativeRpcClient {
   static Uint8List _hexToBytes(String hex) {
     final h = hex.trim().startsWith('0x') ? hex.trim().substring(2) : hex.trim();
     if (h.isEmpty) return Uint8List(0);
-    if (h.length.isOdd) throw const FormatException('hex 长度必须为偶数');
+    if (h.length.isOdd) throw FormatException(tr('hex 长度必须为偶数', 'hex length must be even'));
     return Uint8List.fromList(List.generate(
         h.length ~/ 2, (i) => int.parse(h.substring(i * 2, i * 2 + 2), radix: 16)));
   }

@@ -5,6 +5,7 @@ import '../../core/models/tx_record.dart';
 import '../../core/network/ct_helper_client.dart';
 import '../../core/network/native_rpc.dart';
 import '../../core/utils/ct_resolver.dart';
+import '../../core/l10n/app_strings.dart';
 
 /// 原生 RCPU 主支付通道服务（明文 + CT）。
 ///
@@ -44,7 +45,7 @@ class NativeService {
     if (utxos.isEmpty) return Balance.zero('native');
     final helper = _ctHelper;
     if (helper == null) {
-      throw const CtHelperException('未配置 CT 代理，无法解盲隐私地址余额');
+      throw CtHelperException(tr('未配置 CT 代理，无法解盲隐私地址余额', 'CT helper not configured; cannot unblind the confidential address balance'));
     }
     final resolver = CtResolver(_rpc, ctHelper: helper);
     var total = 0;

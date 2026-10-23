@@ -10,6 +10,7 @@ import 'package:web3dart/crypto.dart';
 import 'bip340.dart';
 import 'bip341.dart';
 import 'native_tx.dart';
+import '../l10n/app_strings.dart';
 
 /// 签名工具统一入口。
 ///
@@ -101,15 +102,16 @@ class SignatureService {
     final privKeyHex = _stripHexPrefix(privateKeyHex);
     final privKey = _hexToBytes(privKeyHex);
     if (privKey.length != 32) {
-      throw const FormatException('私钥须为 32 字节 hex');
+      throw FormatException(tr('私钥须为 32 字节 hex', 'private key must be 32 bytes of hex'));
     }
     final spendPub = Bip340.pubKeyFromPriv(privKey);
     final xOnly = Bip340.xOnlyFromPub(spendPub);
 
     prevOuts ??= _derivePrevOutsFromTx(tx, xOnly);
     if (prevOuts.length != tx.inputs.length) {
-      throw ArgumentError('prevOuts 数量（${prevOuts.length}）与输入数'
-          '（${tx.inputs.length}）不一致');
+      throw ArgumentError(tr(
+          'prevOuts 数量（${prevOuts.length}）与输入数（${tx.inputs.length}）不一致',
+          'prevOuts count (${prevOuts.length}) does not match inputs (${tx.inputs.length})'));
     }
 
     // 逐输入校验脚本类型：P2TR（Schnorr/BIP341）或 P2WPKH（ECDSA/BIP143）。
@@ -117,8 +119,8 @@ class SignatureService {
     for (var i = 0; i < tx.inputs.length; i++) {
       final prev = prevOuts[i];
       if (!Bip341.isP2tr(prev.scriptPubKey) && !_isP2wpkh(prev.scriptPubKey)) {
-        throw const FormatException(
-            '仅支持 P2TR（0x51 0x20 || x32）或 P2WPKH（0x00 0x14 || h160）输入');
+        throw FormatException(
+            tr('仅支持 P2TR（0x51 0x20 || x32）或 P2WPKH（0x00 0x14 || h160）输入', 'only P2TR (0x51 0x20 || x32) or P2WPKH (0x00 0x14 || h160) inputs are supported'));
       }
       parsedPrevOuts.add(NativePrevOut(
         scriptPubKey: prev.scriptPubKey,
@@ -157,8 +159,8 @@ class SignatureService {
   /// （confidential 输入金额按 0 计入）算出，App 侧不得自行重算（金额与
   /// 承诺形态差异会导致签名与链上校验不一致）。返回签名字节（DER||0x01）。
   Uint8List signEcdsaDigest(Uint8List privKey32, Uint8List digest32) {
-    if (privKey32.length != 32) throw const FormatException('私钥须为 32 字节');
-    if (digest32.length != 32) throw const FormatException('摘要须为 32 字节');
+    if (privKey32.length != 32) throw FormatException(tr('私钥须为 32 字节', 'private key must be 32 bytes'));
+    if (digest32.length != 32) throw FormatException(tr('摘要须为 32 字节', 'digest must be 32 bytes'));
     return _ecdsaSignSecp256k1(privKey32, digest32);
   }
 
@@ -334,19 +336,21 @@ class SignatureService {
   /// 调用方经 prevOuts 显式传入；未提供 prevOuts 且无法推导时抛错。
   List<NativePrevOut> _derivePrevOutsFromTx(NativeTx tx, Uint8List xOnly) {
     if (tx.inputs.isEmpty) {
-      throw const FormatException('交易没有输入，无法签名');
+      throw FormatException(tr('交易没有输入，无法签名', 'transaction has no inputs to sign'));
     }
     // 本端无法从交易体还原 prevout 金额；要求调用方显式提供。
-    throw ArgumentError(
+    throw ArgumentError(tr(
         '缺少 prevOuts 上下文（BIP341 sighash 需要 prevout scriptPubKey 与金额）。'
-        '请由 UTXO 选择层提供 NativePrevOut 列表。');
+        '请由 UTXO 选择层提供 NativePrevOut 列表。',
+        'missing prevOuts context (BIP341 sighash needs the prevout scriptPubKey and amount). '
+        'The UTXO selection layer must provide the NativePrevOut list.'));
   }
 
   static String _stripHexPrefix(String hex) =>
       hex.trim().startsWith('0x') ? hex.trim().substring(2) : hex.trim();
 
   static Uint8List _hexToBytes(String hex) {
-    if (hex.length.isOdd) throw const FormatException('hex 长度必须为偶数');
+    if (hex.length.isOdd) throw FormatException(tr('hex 长度必须为偶数', 'hex length must be even'));
     return Uint8List.fromList(List.generate(
         hex.length ~/ 2, (i) => int.parse(hex.substring(i * 2, i * 2 + 2), radix: 16)));
   }

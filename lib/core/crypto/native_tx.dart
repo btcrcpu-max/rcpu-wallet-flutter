@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import '../l10n/app_strings.dart';
 
 /// 原生 RCPU 交易结构（Bitcoin 风格序列化，segwit + CT 支持）。
 ///
@@ -208,7 +209,7 @@ class NativeTxCodec {
     final vc = o.valueCommitment;
     if (vc != null) {
       if (vc.length != 33) {
-        throw const FormatException('CT 金额承诺须为 33B');
+        throw FormatException(tr('CT 金额承诺须为 33B', 'CT amount commitment must be 33 bytes'));
       }
       b.add(vc);
     } else if (o.valueIsNull) {
@@ -220,7 +221,7 @@ class NativeTxCodec {
     final nc = o.nonceCommitment;
     if (nc != null) {
       if (nc.length != 33) {
-        throw const FormatException('CT nonce 承诺须为 33B');
+        throw FormatException(tr('CT nonce 承诺须为 33B', 'CT nonce commitment must be 33 bytes'));
       }
       b.add(nc);
     } else {
@@ -254,7 +255,7 @@ class NativeTxCodec {
     } else if (vtag == 0x08 || vtag == 0x09) {
       valueCommitment = Uint8List.fromList([vtag, ...take(32)]);
     } else {
-      throw const FormatException('非法 CT 金额前缀');
+      throw FormatException(tr('非法 CT 金额前缀', 'invalid CT amount prefix'));
     }
 
     Uint8List? nonceCommitment;
@@ -264,7 +265,7 @@ class NativeTxCodec {
     } else if (ntag == 0x02 || ntag == 0x03 || ntag == 0x04) {
       nonceCommitment = Uint8List.fromList([ntag, ...take(32)]);
     } else {
-      throw const FormatException('非法 CT nonce 前缀');
+      throw FormatException(tr('非法 CT nonce 前缀', 'invalid CT nonce prefix'));
     }
 
     final rpLen = readVarInt();
@@ -293,7 +294,7 @@ class NativeTxCodec {
     var pos = 0;
     Uint8List take(int n) {
       if (pos + n > raw.length) {
-        throw const FormatException('交易字节不足（截断）');
+        throw FormatException(tr('交易字节不足（截断）', 'transaction bytes are truncated'));
       }
       final out = Uint8List.fromList(raw.sublist(pos, pos + n));
       pos += n;
@@ -345,7 +346,7 @@ class NativeTxCodec {
       // marker 0x00 + flag 0x01
       final flag = take(1)[0];
       if (flag != 0x01) {
-        throw const FormatException('非法 witness 标志');
+        throw FormatException(tr('非法 witness 标志', 'invalid witness flag'));
       }
       hasWitness = true;
       inputCount = readVarInt();
@@ -362,7 +363,7 @@ class NativeTxCodec {
         // v3 每输入尾字段（观测恒为 0x00；helper 构造与链上已确认交易一致）。
         final tail = take(1)[0];
         if (tail != 0x00) {
-          throw const FormatException('非法 v3 输入尾字节');
+          throw FormatException(tr('非法 v3 输入尾字节', 'invalid v3 input trailing byte'));
         }
       }
       inputs.add(NativeTxIn(
@@ -400,7 +401,7 @@ class NativeTxCodec {
 
     final locktime = takeLe(4);
     if (pos != raw.length) {
-      throw const FormatException('交易尾部存在多余字节');
+      throw FormatException(tr('交易尾部存在多余字节', 'trailing bytes after transaction'));
     }
     final tx = NativeTx(
       version: version,
@@ -413,7 +414,7 @@ class NativeTxCodec {
 
   static Uint8List _hexToBytes(String hex) {
     final h = hex.trim();
-    if (h.length.isOdd) throw const FormatException('hex 长度必须为偶数');
+    if (h.length.isOdd) throw FormatException(tr('hex 长度必须为偶数', 'hex length must be even'));
     return Uint8List.fromList(List.generate(
         h.length ~/ 2, (i) => int.parse(h.substring(i * 2, i * 2 + 2), radix: 16)));
   }
