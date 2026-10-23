@@ -126,12 +126,11 @@ void main() {
     );
   }
 
-  group('TC-PAY-01 原生交易构造闭环（纯机密模式：构造器直测）', () {
-    // v0.4.7 起原生付款仅受理机密地址：confirmAndPay 对明文目标直接拒绝；
-    // 明文 v2 构造器（buildNativeTxHex）保留（wRCPU 桥路径复用），
-    // 本组改为直测构造 + signNative 闭环，并锁定纯机密拒绝策略。
+  group('TC-PAY-01 原生交易构造闭环（明文 + 机密双通路）', () {
+    // v0.4.11 起明文与机密收款地址都受理：明文走普通 P2TR 交易，
+    // rcpux1 走 CT 通路。本组直测构造 + signNative 闭环，并锁定明文可付。
 
-    test('明文目标地址 → 拒绝（纯机密策略，不构造不广播）', () async {
+    test('明文目标地址 → 走普通交易并广播（v0.4.11 起恢复支持）', () async {
       final rpc = _RecordingNativeRpc([
         utxo(150000000, p2trSpkHex),
       ]);
@@ -147,9 +146,9 @@ void main() {
         assetType: 'native',
         fromAddress: plainAddress.value,
       );
-      expect(result.ok, false);
-      expect(result.error, contains('仅支持机密付款'));
-      expect(rpc.lastBroadcastHex, isNull);
+      expect(result.ok, true);
+      expect(result.error, isNull);
+      expect(rpc.lastBroadcastHex, isNotNull);
     });
 
     test('单输入：输出金额 / 找零 / fee / P2WPKH 脚本 / witness 64B', () async {
