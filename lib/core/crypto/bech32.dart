@@ -40,7 +40,7 @@ class Bech32 {
     final lower = input.toLowerCase();
     final sep = lower.lastIndexOf('1');
     if (sep < 1 || sep + 7 > lower.length) {
-      throw FormatException(tr('bech32 格式非法: 缺少或错误的 1 分隔符', 'invalid bech32: missing or misplaced '1' separator'));
+      throw FormatException(tr('bech32 格式非法: 缺少或错误的 1 分隔符', 'invalid bech32: missing or misplaced 1 separator'));
     }
     final hrp = lower.substring(0, sep);
     final dataPart = lower.substring(sep + 1);
@@ -100,7 +100,7 @@ class Bech32 {
     final lower = input.toLowerCase();
     final sep = lower.lastIndexOf('1');
     if (sep < 1 || sep + 7 > lower.length) {
-      throw FormatException(tr('bech32 格式非法: 缺少或错误的 1 分隔符', 'invalid bech32: missing or misplaced '1' separator'));
+      throw FormatException(tr('bech32 格式非法: 缺少或错误的 1 分隔符', 'invalid bech32: missing or misplaced 1 separator'));
     }
     final hrp = lower.substring(0, sep);
     final dataPart = lower.substring(sep + 1);
