@@ -25,6 +25,13 @@ class NativeUtxo {
   /// plain / ct（ct 表示原始为机密输出，金额经 unblind）。
   final String privacy;
 
+  /// 该输出的确认数（scantxoutset 的 height 推算；未知为 0）。
+  final int confirmations;
+
+  /// 是否为 coinbase 输出。coinbase 需 100 确认才可花费，
+  /// 否则节点返回 -26 bad-txns-premature-spend-of-coinbase。
+  final bool isCoinbase;
+
   const NativeUtxo({
     required this.prevTxid,
     required this.vout,
@@ -32,7 +39,14 @@ class NativeUtxo {
     required this.scriptPubKey,
     this.confirmed = true,
     this.privacy = 'plain',
+    this.confirmations = 0,
+    this.isCoinbase = false,
   });
+
+  /// coinbase 输出需 100 确认（RCPU 与比特币一致），普通输出 1 确认即可。
+  static const int coinbaseMaturity = 100;
+
+  bool get isMature => !isCoinbase || confirmations >= coinbaseMaturity;
 
   /// 从代理 JSON 记录构造。
   factory NativeUtxo.fromJson(Map<String, dynamic> json) {
@@ -43,6 +57,8 @@ class NativeUtxo {
       scriptPubKey: (json['scriptPubKey'] ?? '').toString(),
       confirmed: json['confirmed'] as bool? ?? true,
       privacy: (json['privacy'] ?? 'plain').toString(),
+      confirmations: (json['confirmations'] as num?)?.toInt() ?? 0,
+      isCoinbase: json['coinbase'] as bool? ?? false,
     );
   }
 

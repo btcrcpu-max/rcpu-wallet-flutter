@@ -606,6 +606,7 @@ class PaymentService {
     final pool = (utxos ?? await nativeRpc.getUtxos(fromAddress))
         .where((u) =>
             u.confirmed &&
+            u.isMature &&
             u.amountMicro > 0 &&
             (u.isP2wpkhInput || u.isP2trInput))
         .toList()
@@ -755,7 +756,7 @@ class PaymentService {
       final ctKey = _hexBytes(ctPrivateKeyHex);
       var total = 0;
       var nIn = 0;
-      for (final u in plainUtxos.where((u) => u.isP2wpkhInput)) {
+      for (final u in plainUtxos.where((u) => u.isP2wpkhInput && u.isMature)) {
         total += u.amountMicro;
         nIn++;
       }
@@ -772,7 +773,7 @@ class PaymentService {
 
     // 明文路径。
     final pool = plainUtxos
-        .where((u) => u.isP2wpkhInput || u.isP2trInput)
+        .where((u) => (u.isP2wpkhInput || u.isP2trInput) && u.isMature)
         .toList();
     if (pool.isEmpty) return 0;
     var total = 0;

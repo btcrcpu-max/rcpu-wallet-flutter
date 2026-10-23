@@ -19,6 +19,9 @@ class ReceivePage extends ConsumerStatefulWidget {
 class _ReceivePageState extends ConsumerState<ReceivePage> {
   final _amountController = TextEditingController();
 
+  /// true = 隐私地址（rcpux1），false = 明文地址（rcpu1）。
+  bool _showPrivate = true;
+
   @override
   void dispose() {
     _amountController.dispose();
@@ -39,8 +42,8 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
       );
     }
 
-    // 纯机密模式：收款地址固定为机密地址；明文地址收进折叠项供矿池配置。
-    final addr = wallet.addresses!.private;
+    // 隐私与明文两种收款二维码都提供，由上方开关切换。
+    final addr = _showPrivate ? wallet.addresses!.private : wallet.addresses!.plain;
     final uri = _buildUri(addr, _amountController.text);
 
     return Scaffold(
@@ -49,6 +52,24 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            SegmentedButton<bool>(
+              segments: [
+                ButtonSegment<bool>(
+                  value: true,
+                  label: Text(s.privateSeg),
+                  icon: const Icon(Icons.lock_outline, size: 18),
+                ),
+                ButtonSegment<bool>(
+                  value: false,
+                  label: Text(s.plainSeg),
+                  icon: const Icon(Icons.public, size: 18),
+                ),
+              ],
+              selected: <bool>{_showPrivate},
+              onSelectionChanged: (v) =>
+                  setState(() => _showPrivate = v.first),
+            ),
+            const SizedBox(height: 16),
             Center(
               child: Container(
                 decoration: BoxDecoration(
@@ -69,7 +90,8 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
                   addr.toString(),
                   style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'monospace'),
                 ),
-                subtitle: Text(s.privateAddrHint),
+                subtitle: Text(
+                    _showPrivate ? s.privateAddrHint : s.plainAddrHint),
                 trailing: IconButton(
                   icon: const Icon(Icons.copy),
                   onPressed: () async {
@@ -81,36 +103,6 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
                     }
                   },
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            // 明文地址仅用于矿池等外部 payout 配置，折叠收纳。
-            Card(
-              child: ExpansionTile(
-                title: Text(s.plainAddrPoolTitle,
-                    style: theme.textTheme.bodyMedium),
-                children: [
-                  ListTile(
-                    title: SelectableText(
-                      wallet.addresses!.plain.toString(),
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontFamily: 'monospace'),
-                    ),
-                    subtitle: Text(s.plainAddrHint),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.copy),
-                      onPressed: () async {
-                        await Clipboard.setData(ClipboardData(
-                            text: wallet.addresses!.plain.toString()));
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(s.addressCopied)),
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ],
               ),
             ),
             const SizedBox(height: 12),

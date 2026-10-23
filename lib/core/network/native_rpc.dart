@@ -258,8 +258,10 @@ class NativeRpcClient {
           id: 15,
         );
         final result = body['result'] as Map<String, dynamic>? ?? {};
+        final tip = (result['height'] as num?)?.toInt() ?? 0;
         final unspents = result['unspents'] as List? ?? [];
-        return unspents.map((e) {
+        final utxos = <NativeUtxo>[];
+        for (final e in unspents) {
           final json = e as Map<String, dynamic>;
           final spk = json['scriptPubKey'];
           final spkHex = spk is Map
@@ -268,10 +270,20 @@ class NativeRpcClient {
           // scantxoutset 返回的 txid 为显示字节序（大端 hex）；
           // NativeUtxo.prevTxid 契约是内部字节序（交易序列化原样），
           // 必须反转 32 字节，否则广播报 bad-txns-inputs-missingorspent。
-          final txidBytes = _hexToBytes((json['txid'] ?? '').toString());
-          return NativeUtxo(
+          final displayTxid = (json['txid'] ?? '').toString();
+          final txidBytes = _hexToBytes(displayTxid);
+          final vout = (json['vout'] as num?)?.toInt() ?? 0;
+          final height = (json['height'] as num?)?.toInt() ?? 0;
+          final confs = (tip > 0 && height > 0) ? (tip - height + 1) : 0;
+          // scantxoutset 直接给出 coinbase 标记；老版本节点缺该字段时
+          // 才回退到 gettxout 查询。
+          var isCoinbase = (json['coinbase'] as bool?) ?? false;
+          if (json['coinbase'] == null && confs < NativeUtxo.coinbaseMaturity) {
+            isCoinbase = await _isCoinbaseOutput(displayTxid, vout);
+          }
+          utxos.add(NativeUtxo(
             prevTxid: Uint8List.fromList(txidBytes.reversed.toList()),
-            vout: (json['vout'] as num?)?.toInt() ?? 0,
+            vout: vout,
             // 金额换算不能用 float×1e8：二进制浮点无法精确表示十进制
             // 小数，截断会差 1 micro（如 2.07428001 → 207428000），导致
             // BIP143 sighash 金额与链上不一致、签名无效（-26 NULLFAIL）。
@@ -280,10 +292,29 @@ class NativeRpcClient {
             confirmed: true,
             // 隐私地址下的输出均为 CT（scantxoutset 读金额为 0，需 unblind）。
             privacy: _isPrivateAddress(address) ? 'ct' : 'plain',
-          );
-        }).toList();
+            confirmations: confs,
+            isCoinbase: isCoinbase,
+          ));
+        }
+        // 未成熟的 coinbase 花不出去，直接排除，避免广播时报 -26。
+        return utxos.where((u) => u.isMature).toList();
       }
       rethrow;
+    }
+  }
+
+  /// 判断某输出是否为 coinbase（`gettxout` 的 coinbase 字段）。
+  ///
+  /// 查询失败按"不可判定"处理并返回 true：宁可少一个输入，
+  /// 也不要在广播时抛出 bad-txns-premature-spend-of-coinbase。
+  Future<bool> _isCoinbaseOutput(String txidDisplayHex, int vout) async {
+    try {
+      final body = await _rpc('gettxout', [txidDisplayHex, vout], id: 41);
+      final r = body['result'];
+      if (r is Map) return (r['coinbase'] as bool?) ?? true;
+      return true;
+    } catch (_) {
+      return true;
     }
   }
 
