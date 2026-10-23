@@ -114,11 +114,8 @@ class PaymentService {
     try {
       final String signed;
       final to = Address.parse(toAddress);
-      if (assetType == 'native' && !to.isPrivate) {
-        // 纯机密模式：原生资产不再受理明文目标地址（明文 UTXO 仍可作为
-        // CT 输入被消费，实现自动转换）。
-        return PaymentResult.fail(AppStrings.current.ctOnlyAddr);
-      }
+      // 明文与机密收款地址都受理：明文走普通 P2TR/P2WPKH 交易，
+      // 机密地址走 CT 通路（明文 UTXO 作为 CT 输入被消费）。
       if (assetType == 'native' && to.isPrivate) {
         signed = await _signCtPayment(
           to: to,
